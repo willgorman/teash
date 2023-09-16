@@ -1,4 +1,4 @@
-module github.com/willgorman/teaport
+module github.com/willgorman/teash
 
 go 1.20
 
