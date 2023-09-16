@@ -11,18 +11,23 @@ import (
 )
 
 // TODO: (willgorman)
-// * scroll bar
-// * initial load is slow and table draw is weird at first.  need a placeholder and loading indicator
-// * convert labels to columns
-// * column highlighting or scroll through ...
+//   - scroll bar
+//   - initial load is slow and table draw is weird at first.  need a placeholder and loading indicator
+//   - convert labels to columns
+//   - column highlighting or scroll through ...
+//   - tsh will automatically login if needed but then the output is not just json.
+//     can i handle that so it still works?
+//   - support different ssh usernames than the current user
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
+var tsh string
+
 type model struct {
 	table    table.Model
 	teleport Teleport
-	tshCmd   string
+	tshCmd   []string
 }
 
 // Init is the first function that will be called. It returns an optional
@@ -53,20 +58,49 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "enter":
-			m.tshCmd = "FIXME: generate command"
+			m.tshCmd = []string{"tsh", "ssh", m.table.SelectedRow()[0]}
 			return m, tea.Quit
 		}
 	case Nodes:
 		nodes := Nodes(msg)
 		// TODO: (willgorman) collect the set of all labels and make a column for each
-		m.table.SetColumns([]table.Column{
-			{Title: "Hostname", Width: 30},
-			{Title: "IP", Width: 16},
-			{Title: "OS", Width: 30},
-		})
+		labelCols := map[string]int{}
+		labelIdx := 2
+		for _, n := range nodes {
+			for l := range n.Labels {
+				_, ok := labelCols[l]
+				if ok {
+					continue
+				}
+				labelIdx++
+				labelCols[l] = labelIdx
+			}
+		}
+
+		columns := make([]table.Column, len(labelCols)+3)
+		columns[0] = table.Column{Title: "Hostname", Width: 30}
+		columns[1] = table.Column{Title: "IP", Width: 16}
+		columns[2] = table.Column{Title: "OS", Width: 30}
+		for l, v := range labelCols {
+			columns[v] = table.Column{Title: l, Width: 15}
+		}
+		// TODO: (willgorman) calculate widths by largest value in the column.  but what's the
+		// ideal max width?
+		m.table.SetColumns(columns)
 		rows := []table.Row{}
 		for _, n := range nodes {
-			rows = append(rows, table.Row{n.Hostname, n.IP, n.OS})
+			row := make(table.Row, len(labelCols)+3)
+			row[0] = n.Hostname
+			row[1] = n.IP
+			row[2] = n.OS
+			for l, v := range n.Labels {
+				i, ok := labelCols[l]
+				if !ok {
+					continue
+				}
+				row[i] = v
+			}
+			rows = append(rows, row)
 		}
 		m.table.SetRows(rows)
 		return m, nil
@@ -80,13 +114,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the program's UI, which is just a string. The view is
 // rendered after every Update.
 func (m model) View() string {
-	if m.tshCmd != "" {
+	if len(m.tshCmd) > 0 {
 		return ""
 	}
 	return baseStyle.Render(m.table.View()) + "\n"
 }
 
 func main() {
+	tsh, _ = exec.LookPath("tsh")
+	if tsh == "" {
+		panic("teleport `tsh` command not found")
+	}
 	t := table.New(
 		table.WithFocused(true),
 		table.WithHeight(7),
@@ -109,11 +147,11 @@ func main() {
 	}
 
 	model := m.(model)
-	if model.tshCmd == "" {
+	if len(model.tshCmd) == 0 {
 		return
 	}
-	ssh, _ := exec.LookPath("ssh")
-	err = syscall.Exec(ssh, []string{"ssh", "centos@lab-eu-1a-0504-h18.dev2.spc.local"}, os.Environ())
+
+	err = syscall.Exec(tsh, model.tshCmd, os.Environ())
 	if err != nil {
 		panic(err)
 	}
