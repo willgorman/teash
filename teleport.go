@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"os/exec"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 type Teleport struct {
@@ -44,12 +42,20 @@ func (t *Teleport) GetNodes(refresh bool) (Nodes, error) {
 		if err != nil {
 			return nil, err
 		}
-		spew.Dump(data)
+		t.nodes = Nodes{}
+		for _, n := range data {
+			if n.Kind != "node" {
+				continue
+			}
+			t.nodes = append(t.nodes, Node{
+				Labels:   n.Metadata.Labels,
+				Hostname: n.Spec.Hostname,
+				IP:       n.Spec.CmdLabels.Ip.Result,
+				OS:       n.Spec.CmdLabels.Os.Result,
+			})
+		}
 	}
-	return Nodes{
-		{Hostname: "foo"},
-		{Hostname: "bar"},
-	}, nil
+	return t.nodes, nil
 }
 
 type Nodes []Node

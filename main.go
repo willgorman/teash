@@ -1,11 +1,20 @@
 package main
 
 import (
+	"os"
+	"os/exec"
+	"syscall"
+
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
+// TODO: (willgorman)
+// * scroll bar
+// * initial load is slow and table draw is weird at first.  need a placeholder and loading indicator
+// * convert labels to columns
+// * column highlighting or scroll through ...
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
@@ -13,6 +22,7 @@ var baseStyle = lipgloss.NewStyle().
 type model struct {
 	table    table.Model
 	teleport Teleport
+	tshCmd   string
 }
 
 // Init is the first function that will be called. It returns an optional
@@ -42,17 +52,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "enter":
+			m.tshCmd = "FIXME: generate command"
+			return m, tea.Quit
 		}
 	case Nodes:
 		nodes := Nodes(msg)
 		// TODO: (willgorman) collect the set of all labels and make a column for each
 		m.table.SetColumns([]table.Column{
-			{Title: "Hostname", Width: 20},
-			{Title: "IP", Width: 10},
+			{Title: "Hostname", Width: 30},
+			{Title: "IP", Width: 16},
+			{Title: "OS", Width: 30},
 		})
 		rows := []table.Row{}
 		for _, n := range nodes {
-			rows = append(rows, table.Row{n.Hostname, n.IP})
+			rows = append(rows, table.Row{n.Hostname, n.IP, n.OS})
 		}
 		m.table.SetRows(rows)
 		return m, nil
@@ -66,6 +80,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the program's UI, which is just a string. The view is
 // rendered after every Update.
 func (m model) View() string {
+	if m.tshCmd != "" {
+		return ""
+	}
 	return baseStyle.Render(m.table.View()) + "\n"
 }
 
@@ -85,7 +102,19 @@ func main() {
 		Background(lipgloss.Color("57")).
 		Bold(false)
 	t.SetStyles(s)
-	if _, err := tea.NewProgram(model{table: t}).Run(); err != nil {
+	var m tea.Model
+	var err error
+	if m, err = tea.NewProgram(model{table: t}).Run(); err != nil {
+		panic(err)
+	}
+
+	model := m.(model)
+	if model.tshCmd == "" {
+		return
+	}
+	ssh, _ := exec.LookPath("ssh")
+	err = syscall.Exec(ssh, []string{"ssh", "centos@lab-eu-1a-0504-h18.dev2.spc.local"}, os.Environ())
+	if err != nil {
 		panic(err)
 	}
 }
