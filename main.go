@@ -25,6 +25,7 @@ import (
 //   - rank the rows by best match?
 //   - highlight matching characters?
 //   - select column to search only that column?
+//   - altscreen with key help
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
@@ -157,9 +158,9 @@ func (m model) filterNodesBySearch() model {
 	m.visible = nil
 	txt2node := map[string]Node{}
 	for _, n := range m.nodes {
-		allText := n.Hostname + n.IP + n.OS
+		allText := n.Hostname + " " + n.IP + " " + n.OS
 		for _, v := range n.Labels {
-			allText = allText + v
+			allText = allText + " " + v
 		}
 		txt2node[allText] = n
 	}
