@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/exec"
+	"strconv"
 	"syscall"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -14,6 +15,9 @@ import (
 )
 
 // TODO: (willgorman)
+//   - select column to search only that column?
+//   - highlight the column with search mode
+//   - stable column order
 //   - scroll bar
 //   - initial load is slow and table draw is weird at first.  need a placeholder and loading indicator
 //   - convert labels to columns
@@ -24,7 +28,6 @@ import (
 //   - remove / from search input
 //   - rank the rows by best match?
 //   - highlight matching characters?
-//   - select column to search only that column?
 //   - altscreen with key help
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
@@ -33,13 +36,16 @@ var baseStyle = lipgloss.NewStyle().
 var tsh string
 
 type model struct {
-	table     table.Model
-	search    textinput.Model
-	teleport  Teleport
-	tshCmd    []string
-	nodes     Nodes
-	visible   Nodes
-	searching bool
+	table         table.Model
+	search        textinput.Model
+	teleport      Teleport
+	tshCmd        []string
+	nodes         Nodes
+	visible       Nodes
+	searching     bool
+	columnSelMode bool
+	columnSel     int
+	headers       map[int]string
 }
 
 // Init is the first function that will be called. It returns an optional
@@ -67,14 +73,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc":
 			if m.search.Focused() {
 				m.search.Blur()
-				m.search.SetValue("")
-				m.searching = false
 			}
 			if m.table.Focused() {
 				m.table.Blur()
 			} else {
 				m.table.Focus()
 			}
+			m.search.SetValue("")
+			m.searching = false
+			m.columnSel = 0
+			m.search.Prompt = "> "
+			m.columnSelMode = false
+		case "1", "2", "3", "4", "5", "6", "7", "8", "9":
+			// TODO: (willgorman) this should be only numbers up to the number of columns
+			// and not sure what to do if more than 9 columns
+			if m.columnSelMode && m.columnSel == 0 {
+				col, _ := strconv.Atoi(msg.String()) // ignore error since we know it's a number
+				m.columnSel = col
+				m.searching = true
+				m.search.Prompt = m.headers[col] + "> "
+			}
+		case "c":
+			m.columnSelMode = true
 		case "q":
 			return m, tea.Quit
 		case "ctrl+c":
@@ -93,7 +113,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		panic(msg)
 	}
 	m.search, _ = m.search.Update(msg)
-	m = m.filterNodesBySearch()
+	m = m.filterNodesBySearch().fillTable()
 	m.table, cmd = m.table.Update(msg)
 	return m, cmd
 }
@@ -123,12 +143,20 @@ func (m model) fillTable() model {
 	// TODO: (willgorman) sort columns by name for consistent order
 
 	columns := make([]table.Column, len(labelCols)+3)
-	columns[0] = table.Column{Title: "Hostname", Width: 30}
-	columns[1] = table.Column{Title: "IP", Width: 16}
-	columns[2] = table.Column{Title: "OS", Width: 30}
+	columns[0] = table.Column{Title: m.title("Hostname", 1), Width: 30}
+	columns[1] = table.Column{Title: m.title("IP", 2), Width: 16}
+	columns[2] = table.Column{Title: m.title("OS", 3), Width: 30}
 	for l, v := range labelCols {
-		columns[v] = table.Column{Title: l, Width: 15}
+		columns[v] = table.Column{Title: m.title(l, v+1), Width: 15}
 	}
+
+	if m.headers == nil {
+		m.headers = make(map[int]string)
+		for i, c := range columns {
+			m.headers[i+1] = c.Title
+		}
+	}
+
 	// TODO: (willgorman) calculate widths by largest value in the column.  but what's the
 	// ideal max width?
 	m.table.SetColumns(columns)
@@ -151,25 +179,48 @@ func (m model) fillTable() model {
 	return m
 }
 
+func (m model) title(s string, i int) string {
+	if m.columnSelMode {
+		return strconv.Itoa(i)
+	}
+	return s
+}
+
 func (m model) filterNodesBySearch() model {
 	if m.search.Value() == "" {
 		return m
 	}
 	m.visible = nil
 	txt2node := map[string]Node{}
-	for _, n := range m.nodes {
-		allText := n.Hostname + " " + n.IP + " " + n.OS
-		for _, v := range n.Labels {
-			allText = allText + " " + v
+	if m.columnSel == 0 {
+		// if no column is selected we'll fuzzy search on all columns
+		for _, n := range m.nodes {
+			allText := n.Hostname + " " + n.IP + " " + n.OS
+			for _, v := range n.Labels {
+				allText = allText + " " + v
+			}
+			txt2node[allText] = n
 		}
-		txt2node[allText] = n
+	} else {
+		for _, n := range m.nodes {
+			switch m.columnSel {
+			case 1:
+				txt2node[n.Hostname] = n
+			case 2:
+				txt2node[n.IP] = n
+			case 3:
+				txt2node[n.OS] = n
+			default:
+				txt2node[n.Labels[m.headers[m.columnSel]]] = n
+			}
+		}
 	}
+
 	ranks := fuzzy.RankFind(m.search.Value(), maps.Keys(txt2node))
 	for _, rank := range ranks {
 		m.visible = append(m.visible, txt2node[rank.Target])
 	}
-
-	return m.fillTable()
+	return m
 }
 
 func main() {
