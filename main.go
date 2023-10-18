@@ -1,9 +1,13 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/exec"
+	"slices"
+	"sort"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -11,13 +15,17 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/sanity-io/litter"
 	"golang.org/x/exp/maps"
 )
 
 // TODO: (willgorman)
-//   - select column to search only that column?
-//   - highlight the column with search mode
 //   - stable column order
+//   - fix columns selection for labels
+//   - highlight the column with search mode
+//   - ranking still seems weird. levenstein distance can be the same for two results
+//     where one has a prefix of the search term and one does not but the one without
+//     the prefix may be shown first...
 //   - scroll bar
 //   - initial load is slow and table draw is weird at first.  need a placeholder and loading indicator
 //   - convert labels to columns
@@ -29,6 +37,11 @@ import (
 //   - rank the rows by best match?
 //   - highlight matching characters?
 //   - altscreen with key help
+//   - flag to enable/disable logging
+//
+// FIXME:
+// - if the current table cursor is > than the number of rows that are left after applying a search then the table will appear empty until moving the cursor
+// - search is case-sensitive
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
@@ -91,7 +104,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				col, _ := strconv.Atoi(msg.String()) // ignore error since we know it's a number
 				m.columnSel = col
 				m.searching = true
-				m.search.Prompt = m.headers[col] + "> "
+				log.Println(litter.Sdump("WTF", m.headers))
+				m.search.Prompt = m.headers[col-1] + "> "
 			}
 		case "c":
 			m.columnSelMode = true
@@ -128,54 +142,66 @@ func (m model) View() string {
 }
 
 func (m model) fillTable() model {
-	labelCols := map[string]int{}
-	labelIdx := 2
+	// labelCols := map[string]int{}
+	labelSet := map[string]struct{}{}
+	// labelIdx := 2
 	for _, n := range m.nodes {
 		for l := range n.Labels {
-			_, ok := labelCols[l]
-			if ok {
-				continue
-			}
-			labelIdx++
-			labelCols[l] = labelIdx
+			// _, ok := labelCols[l]
+			// if ok {
+			// 	continue
+			// }
+			// labelIdx++
+			// labelCols[l] = labelIdx
+			labelSet[l] = struct{}{}
 		}
 	}
-	// TODO: (willgorman) sort columns by name for consistent order
+	labels := maps.Keys(labelSet)
+	slices.Sort(labels)
 
-	columns := make([]table.Column, len(labelCols)+3)
-	columns[0] = table.Column{Title: m.title("Hostname", 1), Width: 30}
-	columns[1] = table.Column{Title: m.title("IP", 2), Width: 16}
-	columns[2] = table.Column{Title: m.title("OS", 3), Width: 30}
-	for l, v := range labelCols {
-		columns[v] = table.Column{Title: m.title(l, v+1), Width: 15}
+	m.headers = map[int]string{
+		0: "Hostname",
+		1: "IP",
+		2: "OS",
+	}
+	for i, l := range labels {
+		m.headers[i+3] = l
 	}
 
-	if m.headers == nil {
-		m.headers = make(map[int]string)
-		for i, c := range columns {
-			m.headers[i+1] = c.Title
-		}
+	columns := make([]table.Column, len(labels)+3)
+	columns[0] = table.Column{Title: m.title(m.headers[0], 1), Width: 30}
+	columns[1] = table.Column{Title: m.title(m.headers[1], 2), Width: 16}
+	columns[2] = table.Column{Title: m.title(m.headers[2], 3), Width: 30}
+	for i, v := range labels {
+		columns[i+3] = table.Column{Title: m.title(v, i+4), Width: 15}
 	}
 
 	// TODO: (willgorman) calculate widths by largest value in the column.  but what's the
 	// ideal max width?
 	m.table.SetColumns(columns)
 	rows := []table.Row{}
+	log.Println("VISIBLE: ", len(m.visible), " ALL: ", len(m.nodes))
 	for _, n := range m.visible {
-		row := make(table.Row, len(labelCols)+3)
+		row := make(table.Row, len(labels)+3)
 		row[0] = n.Hostname
 		row[1] = n.IP
 		row[2] = n.OS
 		for l, v := range n.Labels {
-			i, ok := labelCols[l]
-			if !ok {
+			idx := slices.Index(labels, l)
+			if idx < 0 {
 				continue
 			}
-			row[i] = v
+			row[idx+3] = v
 		}
 		rows = append(rows, row)
 	}
 	m.table.SetRows(rows)
+	log.Println("TBLE ROWS: ", len(rows))
+	if len(rows) > 0 {
+		log.Println("FRIST: ", rows[0][0])
+	}
+	log.Println("CURSES: ", m.table.Cursor())
+
 	return m
 }
 
@@ -188,11 +214,13 @@ func (m model) title(s string, i int) string {
 
 func (m model) filterNodesBySearch() model {
 	if m.search.Value() == "" {
+		m.visible = m.nodes
 		return m
 	}
 	m.visible = nil
-	txt2node := map[string]Node{}
+
 	if m.columnSel == 0 {
+		txt2node := map[string]Node{}
 		// if no column is selected we'll fuzzy search on all columns
 		for _, n := range m.nodes {
 			allText := n.Hostname + " " + n.IP + " " + n.OS
@@ -201,24 +229,39 @@ func (m model) filterNodesBySearch() model {
 			}
 			txt2node[allText] = n
 		}
-	} else {
-		for _, n := range m.nodes {
-			switch m.columnSel {
-			case 1:
-				txt2node[n.Hostname] = n
-			case 2:
-				txt2node[n.IP] = n
-			case 3:
-				txt2node[n.OS] = n
-			default:
-				txt2node[n.Labels[m.headers[m.columnSel]]] = n
-			}
+		ranks := fuzzy.RankFind(m.search.Value(), maps.Keys(txt2node))
+		for _, rank := range ranks {
+			m.visible = append(m.visible, txt2node[rank.Target])
+		}
+		return m
+	}
+
+	txt2nodes := map[string][]Node{}
+	for _, n := range m.nodes {
+		switch m.columnSel {
+		case 1:
+			txt2nodes[strings.ToLower(n.Hostname)] = append(txt2nodes[strings.ToLower(n.Hostname)], n)
+		case 2:
+			txt2nodes[strings.ToLower(n.IP)] = append(txt2nodes[strings.ToLower(n.IP)], n)
+		case 3:
+			txt2nodes[strings.ToLower(n.OS)] = append(txt2nodes[strings.ToLower(n.OS)], n)
+		default:
+			txt2nodes[strings.ToLower(n.Labels[m.headers[m.columnSel-1]])] = append(txt2nodes[strings.ToLower(n.Labels[m.headers[m.columnSel-1]])], n)
 		}
 	}
 
-	ranks := fuzzy.RankFind(m.search.Value(), maps.Keys(txt2node))
+	// FIXME: (willgorman) Need to make sure that m.visible ends up in a stable
+	// order
+	log.Println("SEARCHING: ", m.search.Value(), "IN: ", litter.Sdump(maps.Keys(txt2nodes)))
+	ranks := fuzzy.RankFind(m.search.Value(), maps.Keys(txt2nodes))
+	sort.Sort(ranks)
+	log.Println("RESULTS: ", litter.Sdump(ranks))
 	for _, rank := range ranks {
-		m.visible = append(m.visible, txt2node[rank.Target])
+		nodes := txt2nodes[rank.Target]
+		for _, n := range nodes {
+			m.visible = append(m.visible, n)
+		}
+
 	}
 	return m
 }
@@ -234,6 +277,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	log.Println("------------------------------------")
 	defer f.Close()
 	t := table.New(
 		table.WithFocused(true),
