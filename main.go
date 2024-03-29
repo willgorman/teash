@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -32,8 +33,9 @@ var baseStyle = lipgloss.NewStyle().
 	BorderForeground(lipgloss.Color("240"))
 
 var (
-	helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render
-	tsh       string
+	helpStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render
+	loadingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	tsh          string
 )
 
 type model struct {
@@ -48,24 +50,26 @@ type model struct {
 	columnSel     int
 	headers       map[int]string
 	profile       string
+	spinner       spinner.Model
 }
 
 // Init is the first function that will be called. It returns an optional
 // initial command. To not perform an initial command return nil.
 func (m model) Init() tea.Cmd {
 	// TODO: (willgorman) cursor blink?
-	return func() tea.Msg {
+	return tea.Batch(func() tea.Msg {
 		nodes, err := m.teleport.GetNodes(true)
 		if err != nil {
 			return err
 		}
 		return nodes
-	}
+	}, m.spinner.Tick)
 }
 
 // Update is called when a message is received. Use it to inspect messages
 // and, in response, update the model and/or send a command.
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	// log.Printf("table focus: %t search focus: %t\n", m.table.Focused(), m.search.Focused())
 	if m.searching {
@@ -125,9 +129,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// log.Println(litter.Sdump(msg))
 	m.search, _ = m.search.Update(msg)
 	m = m.filterNodesBySearch().fillTable()
+	m.spinner, cmd = m.spinner.Update(msg)
+	cmds = append(cmds, cmd)
 	m.table, cmd = m.table.Update(msg)
+	cmds = append(cmds, cmd)
 
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
 // View renders the program's UI, which is just a string. The view is
@@ -279,8 +286,10 @@ func (m model) filterNodesBySearch() model {
 
 func (m model) navView() string {
 	view := fmt.Sprintf("\n[%s]", m.profile)
+	// TODO: (willgorman) might be better to have a flag that lasts until the init cmd is done
+	// otherwise we'll still show loading when the initial load is done but 0 nodes are in the cluster
 	if len(m.nodes) == 0 {
-		return view + ""
+		return view + loadingStyle.Render(" Loading") + m.spinner.View()
 	}
 	if len(m.visible) != len(m.nodes) {
 		return view + fmt.Sprintf(" %d/%d (total: %d)", m.table.Cursor()+1, len(m.visible), len(m.nodes))
@@ -331,6 +340,10 @@ func main() {
 
 	search := textinput.New()
 
+	spin := spinner.New(
+		spinner.WithSpinner(spinner.Ellipsis),
+		spinner.WithStyle(loadingStyle))
+
 	// make sure there's at least one profile in teleport,
 	// if so then it will use that automatically, otherwise
 	// user needs to login first
@@ -339,7 +352,9 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	if m, err = tea.NewProgram(model{table: t, search: search, profile: profile}).Run(); err != nil {
+	if m, err = tea.NewProgram(model{
+		table: t, search: search, profile: profile, spinner: spin,
+	}).Run(); err != nil {
 		panic(err)
 	}
 
