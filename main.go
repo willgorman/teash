@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -20,28 +21,15 @@ import (
 )
 
 // TODO: (willgorman)
-//   - stable column order
 //   - fix columns selection for labels
-//   - highlight the column with search mode
 //   - ranking still seems weird. levenstein distance can be the same for two results
 //     where one has a prefix of the search term and one does not but the one without
 //     the prefix may be shown first...
-//   - scroll bar
-//   - initial load is slow and table draw is weird at first.  need a placeholder and loading indicator
-//   - convert labels to columns
-//   - column highlighting or scroll through ...
-//   - tsh will automatically login if needed but then the output is not just json.
-//     can i handle that so it still works?
-//   - support different ssh usernames than the current user
 //   - remove / from search input
 //   - rank the rows by best match?
-//   - highlight matching characters?
-//   - altscreen with key help
-//   - flag to enable/disable logging
 //
 // FIXME:
 // - if the current table cursor is > than the number of rows that are left after applying a search then the table will appear empty until moving the cursor
-// - search is case-sensitive
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
@@ -297,6 +285,14 @@ func main() {
 	var m tea.Model
 
 	search := textinput.New()
+
+	// make sure there's at least one profile in teleport,
+	// if so then it will use that automatically, otherwise
+	// user needs to login first
+	if err := CheckProfiles(); err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 	if m, err = tea.NewProgram(model{table: t, search: search}).Run(); err != nil {
 		panic(err)
 	}

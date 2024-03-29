@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os/exec"
+	"strings"
 )
 
 type Teleport struct {
@@ -67,14 +70,37 @@ type Node struct {
 	OS       string
 }
 
+func CheckProfiles() error {
+	cmd := exec.Command("tsh", "status", "--format=json")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		if strings.Contains(string(output), "Not logged in") {
+			return fmt.Errorf("%s Run `tsh login` first", strings.TrimSpace(string(output)))
+		}
+		return fmt.Errorf("%s: %s", err, string(output))
+	}
+
+	status := map[string]any{}
+	if err := json.Unmarshal(output, &status); err != nil {
+		return fmt.Errorf("`tsh status` returned invalid data, cannot check login:\n%s", string(output))
+	}
+
+	// i _think_ that even if the active profile is expired it's still going to be here
+	if _, ok := status["active"]; !ok {
+		return errors.New("no active profile found, `tsh login` and try again")
+	}
+	return nil
+}
+
 func lsNodesJson() (string, error) {
 	cmd := exec.Command("tsh", "ls", "--format", "json")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		// TODO: (willgorman) handle different error types (not logged in, etc)
 		return "", err
 	}
-	return string(output), nil
+	// if `tsh ls` has to re-login first then it returns an extra bit of
+	// text in front of the json so we need to remove that
+	return string(stripInvalidJSONPrefix(output)), nil
 }
 
 type teleportItem struct {
@@ -95,4 +121,19 @@ type cmdLabels struct{}
 
 type Result struct {
 	Result string
+}
+
+// given data that should contain valid json but prefixed with
+// arbitrary text, return the string without the invalid json
+// prefix
+func stripInvalidJSONPrefix(data []byte) []byte {
+	for {
+		if json.Valid(data) {
+			return data
+		}
+		if len(data) == 0 {
+			return data
+		}
+		data = data[1:]
+	}
 }
