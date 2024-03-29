@@ -34,7 +34,10 @@ var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
-var tsh string
+var (
+	helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render
+	tsh       string
+)
 
 type model struct {
 	table         table.Model
@@ -126,7 +129,7 @@ func (m model) View() string {
 	if len(m.tshCmd) > 0 {
 		return ""
 	}
-	return baseStyle.Render(m.table.View()) + "\n" + m.search.View() + "\n"
+	return baseStyle.Render(m.table.View()) + m.navView() + "\n" + m.search.View() + "\n" + m.helpView()
 }
 
 func (m model) fillTable() model {
@@ -184,11 +187,16 @@ func (m model) fillTable() model {
 		rows = append(rows, row)
 	}
 	m.table.SetRows(rows)
-	log.Println("TBLE ROWS: ", len(rows))
-	if len(rows) > 0 {
-		log.Println("FRIST: ", rows[0][0])
+	// log.Println("TABLE ROWS: ", len(rows))
+	// if len(rows) > 0 {
+	// 	log.Println("FIRST: ", rows[0][0])
+	// }
+
+	if m.table.Cursor() > len(m.visible) {
+		m.table.SetCursor(len(m.visible) - 1)
+		m.table.GotoBottom()
 	}
-	log.Println("CURSES: ", m.table.Cursor())
+	// log.Println("CURSOR: ", m.table.Cursor())
 
 	return m
 }
@@ -212,12 +220,20 @@ func (m model) filterNodesBySearch() model {
 		// if no column is selected we'll fuzzy search on all columns
 		for _, n := range m.nodes {
 			allText := n.Hostname + " " + n.IP + " " + n.OS
-			for _, v := range n.Labels {
-				allText = allText + " " + v
+			// these can't be in random map key order because otherwise
+			// the search results will be different
+			labels := sort.StringSlice(maps.Keys(n.Labels))
+			labels.Sort()
+			for _, l := range labels {
+				allText = allText + " " + n.Labels[l]
 			}
 			txt2node[allText] = n
 		}
-		ranks := fuzzy.RankFind(m.search.Value(), maps.Keys(txt2node))
+		sortedNodes := sort.StringSlice(maps.Keys(txt2node))
+		sortedNodes.Sort()
+		// log.Println("SEARCHING: ", m.search.Value(), "IN: ", litter.Sdump(sortedNodes))
+		ranks := fuzzy.RankFind(m.search.Value(), sortedNodes)
+		sort.Sort(ranks)
 		for _, rank := range ranks {
 			m.visible = append(m.visible, txt2node[rank.Target])
 		}
@@ -238,12 +254,10 @@ func (m model) filterNodesBySearch() model {
 		}
 	}
 
-	// FIXME: (willgorman) Need to make sure that m.visible ends up in a stable
-	// order
-	log.Println("SEARCHING: ", m.search.Value(), "IN: ", litter.Sdump(maps.Keys(txt2nodes)))
+	// log.Println("SEARCHING: ", m.search.Value(), "IN: ", litter.Sdump(maps.Keys(txt2nodes)))
 	ranks := fuzzy.RankFind(m.search.Value(), maps.Keys(txt2nodes))
 	sort.Sort(ranks)
-	log.Println("RESULTS: ", litter.Sdump(ranks))
+	// log.Println("RESULTS: ", litter.Sdump(ranks))
 	for _, rank := range ranks {
 		nodes := txt2nodes[rank.Target]
 		for _, n := range nodes {
@@ -252,6 +266,21 @@ func (m model) filterNodesBySearch() model {
 
 	}
 	return m
+}
+
+func (m model) navView() string {
+	if len(m.nodes) == 0 {
+		return ""
+	}
+	if len(m.visible) != len(m.nodes) {
+		return fmt.Sprintf("\n %d of %d (out of %d)", m.table.Cursor()+1, len(m.visible), len(m.nodes))
+	}
+
+	return fmt.Sprintf("\n %d of %d", m.table.Cursor()+1, len(m.nodes))
+}
+
+func (m model) helpView() string {
+	return helpStyle("\n  ↑/↓: Navigate • q: Quit\n")
 }
 
 func main() {
