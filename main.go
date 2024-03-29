@@ -27,9 +27,6 @@ import (
 //     the prefix may be shown first...
 //   - remove / from search input
 //   - rank the rows by best match?
-//
-// FIXME:
-// - if the current table cursor is > than the number of rows that are left after applying a search then the table will appear empty until moving the cursor
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
@@ -50,6 +47,7 @@ type model struct {
 	columnSelMode bool
 	columnSel     int
 	headers       map[int]string
+	profile       string
 }
 
 // Init is the first function that will be called. It returns an optional
@@ -269,18 +267,25 @@ func (m model) filterNodesBySearch() model {
 }
 
 func (m model) navView() string {
+	view := fmt.Sprintf("\n[%s]", m.profile)
 	if len(m.nodes) == 0 {
-		return ""
+		return view + ""
 	}
 	if len(m.visible) != len(m.nodes) {
-		return fmt.Sprintf("\n %d of %d (out of %d)", m.table.Cursor()+1, len(m.visible), len(m.nodes))
+		return view + fmt.Sprintf(" %d/%d (total: %d)", m.table.Cursor()+1, len(m.visible), len(m.nodes))
 	}
 
-	return fmt.Sprintf("\n %d of %d", m.table.Cursor()+1, len(m.nodes))
+	return view + fmt.Sprintf(" %d/%d", m.table.Cursor()+1, len(m.nodes))
 }
 
 func (m model) helpView() string {
-	return helpStyle("\n  ↑/↓: Navigate • q: Quit\n")
+	if m.searching {
+		return helpStyle("\n  Type to search • Esc: cancel search • Enter: ssh to selection\n")
+	}
+	if m.columnSelMode {
+		return helpStyle("\n  ↑/↓: Navigate • 0-9: Choose column • q: Quit • Esc: cancel column select • Enter: ssh to selection\n")
+	}
+	return helpStyle("\n  ↑/↓: Navigate • /: Start search • q: Quit • c: Select column to search • Enter: ssh to selection\n")
 }
 
 func main() {
@@ -318,11 +323,12 @@ func main() {
 	// make sure there's at least one profile in teleport,
 	// if so then it will use that automatically, otherwise
 	// user needs to login first
-	if err := CheckProfiles(); err != nil {
+	profile, err := CheckProfiles()
+	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	if m, err = tea.NewProgram(model{table: t, search: search}).Run(); err != nil {
+	if m, err = tea.NewProgram(model{table: t, search: search, profile: profile}).Run(); err != nil {
 		panic(err)
 	}
 

@@ -70,26 +70,33 @@ type Node struct {
 	OS       string
 }
 
-func CheckProfiles() error {
+func CheckProfiles() (string, error) {
 	cmd := exec.Command("tsh", "status", "--format=json")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		if strings.Contains(string(output), "Not logged in") {
-			return fmt.Errorf("%s Run `tsh login` first", strings.TrimSpace(string(output)))
+			return "", fmt.Errorf("%s Run `tsh login` first", strings.TrimSpace(string(output)))
 		}
-		return fmt.Errorf("%s: %s", err, string(output))
+		return "", fmt.Errorf("%s: %s", err, string(output))
 	}
 
 	status := map[string]any{}
 	if err := json.Unmarshal(output, &status); err != nil {
-		return fmt.Errorf("`tsh status` returned invalid data, cannot check login:\n%s", string(output))
+		return "", fmt.Errorf("`tsh status` returned invalid data, cannot check login:\n%s", string(output))
 	}
 
 	// i _think_ that even if the active profile is expired it's still going to be here
-	if _, ok := status["active"]; !ok {
-		return errors.New("no active profile found, `tsh login` and try again")
+	active, ok := status["active"].(map[string]any)
+	if !ok {
+		return "", errors.New("no active profile found, `tsh login` and try again")
 	}
-	return nil
+
+	cluster, ok := active["cluster"].(string)
+	if !ok {
+		return "", errors.New("no active cluster found, `tsh login` and try again")
+	}
+
+	return cluster, nil
 }
 
 func lsNodesJson() (string, error) {
