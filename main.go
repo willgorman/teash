@@ -53,6 +53,7 @@ type model struct {
 // Init is the first function that will be called. It returns an optional
 // initial command. To not perform an initial command return nil.
 func (m model) Init() tea.Cmd {
+	// TODO: (willgorman) cursor blink?
 	return func() tea.Msg {
 		nodes, err := m.teleport.GetNodes(true)
 		if err != nil {
@@ -66,6 +67,7 @@ func (m model) Init() tea.Cmd {
 // and, in response, update the model and/or send a command.
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	// log.Printf("table focus: %t search focus: %t\n", m.table.Focused(), m.search.Focused())
 	if m.searching {
 		m.search.Focus()
 	}
@@ -74,13 +76,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc":
 			if m.search.Focused() {
+				// log.Println("SEARCH FOCUS -> BLUR")
 				m.search.Blur()
 			}
-			if m.table.Focused() {
-				m.table.Blur()
-			} else {
+			if !m.table.Focused() {
+				// log.Println("TABLE BLUR -> FOCUS")
 				m.table.Focus()
 			}
+
 			m.search.SetValue("")
 			m.searching = false
 			m.columnSel = 0
@@ -89,6 +92,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "1", "2", "3", "4", "5", "6", "7", "8", "9":
 			// TODO: (willgorman) this should be only numbers up to the number of columns
 			// and not sure what to do if more than 9 columns
+			// Issue #14 should help since using arrows to select columns is easier than a mode
 			if m.columnSelMode && m.columnSel == 0 {
 				col, _ := strconv.Atoi(msg.String()) // ignore error since we know it's a number
 				m.columnSel = col
@@ -104,6 +108,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "/":
 			m.searching = true
+			// we want to focus to activate the cursor but we don't want
+			// it to handle this message since that adds '/' to the value
+			return m, m.search.Focus()
 		case "enter":
 			m.tshCmd = []string{"tsh", "ssh", m.table.SelectedRow()[0]}
 			return m, tea.Quit
@@ -115,9 +122,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case error:
 		panic(msg)
 	}
+	// log.Println(litter.Sdump(msg))
 	m.search, _ = m.search.Update(msg)
 	m = m.filterNodesBySearch().fillTable()
 	m.table, cmd = m.table.Update(msg)
+
 	return m, cmd
 }
 
@@ -136,12 +145,6 @@ func (m model) fillTable() model {
 	// labelIdx := 2
 	for _, n := range m.nodes {
 		for l := range n.Labels {
-			// _, ok := labelCols[l]
-			// if ok {
-			// 	continue
-			// }
-			// labelIdx++
-			// labelCols[l] = labelIdx
 			labelSet[l] = struct{}{}
 		}
 	}
@@ -169,7 +172,7 @@ func (m model) fillTable() model {
 	// ideal max width?
 	m.table.SetColumns(columns)
 	rows := []table.Row{}
-	log.Println("VISIBLE: ", len(m.visible), " ALL: ", len(m.nodes))
+	// log.Println("VISIBLE: ", len(m.visible), " ALL: ", len(m.nodes))
 	for _, n := range m.visible {
 		row := make(table.Row, len(labels)+3)
 		row[0] = n.Hostname
@@ -189,6 +192,14 @@ func (m model) fillTable() model {
 	// if len(rows) > 0 {
 	// 	log.Println("FIRST: ", rows[0][0])
 	// }
+
+	if len(m.table.Rows()) == 0 {
+		m.table.SetCursor(0)
+	}
+
+	if m.table.Cursor() < 0 && len(m.table.Rows()) > 0 {
+		m.table.SetCursor(0)
+	}
 
 	if m.table.Cursor() > len(m.visible) {
 		m.table.SetCursor(len(m.visible) - 1)
@@ -274,7 +285,7 @@ func (m model) navView() string {
 	if len(m.visible) != len(m.nodes) {
 		return view + fmt.Sprintf(" %d/%d (total: %d)", m.table.Cursor()+1, len(m.visible), len(m.nodes))
 	}
-
+	// log.Printf("cursor: %d,  len(m.visible): %d", m.table.Cursor(), len(m.visible))
 	return view + fmt.Sprintf(" %d/%d", m.table.Cursor()+1, len(m.nodes))
 }
 
