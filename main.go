@@ -225,12 +225,12 @@ func (m model) filterNodesBySearch() model {
 			for _, l := range labels {
 				allText = allText + " " + n.Labels[l]
 			}
-			txt2node[allText] = n
+			txt2node[strings.ToLower(allText)] = n
 		}
 		sortedNodes := sort.StringSlice(maps.Keys(txt2node))
 		sortedNodes.Sort()
 		// log.Println("SEARCHING: ", m.search.Value(), "IN: ", litter.Sdump(sortedNodes))
-		ranks := fuzzy.RankFind(m.search.Value(), sortedNodes)
+		ranks := fuzzy.RankFind(strings.ToLower(m.search.Value()), sortedNodes)
 		sort.Sort(ranks)
 		for _, rank := range ranks {
 			m.visible = append(m.visible, txt2node[rank.Target])
@@ -253,7 +253,7 @@ func (m model) filterNodesBySearch() model {
 	}
 
 	// log.Println("SEARCHING: ", m.search.Value(), "IN: ", litter.Sdump(maps.Keys(txt2nodes)))
-	ranks := fuzzy.RankFind(m.search.Value(), maps.Keys(txt2nodes))
+	ranks := fuzzy.RankFind(strings.ToLower(m.search.Value()), maps.Keys(txt2nodes))
 	sort.Sort(ranks)
 	// log.Println("RESULTS: ", litter.Sdump(ranks))
 	for _, rank := range ranks {
