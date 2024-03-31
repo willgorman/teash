@@ -212,11 +212,11 @@ func (m model) fillTable() model {
 		m.table.SetCursor(0)
 	}
 
-	if m.table.Cursor() >= len(m.visible) {
-		m.table.GotoTop()
+	if m.table.Cursor() >= len(m.table.Rows())-1 {
+		m.table.GotoBottom()
 	}
-	log.Println("CURSOR: ", m.table.Cursor())
-	log.Println("VISIBLE: ", len(m.visible))
+	// log.Println("CURSOR: ", m.table.Cursor())
+	// log.Println("VISIBLE: ", len(m.visible))
 
 	return m
 }
