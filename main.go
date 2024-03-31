@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"slices"
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
@@ -37,6 +35,12 @@ var (
 	loadingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	tsh          string
 )
+
+type Teleport interface {
+	GetNodes(refresh bool) (Nodes, error)
+	GetCluster() (string, error)
+	Connect(cmd []string)
+}
 
 type model struct {
 	table         table.Model
@@ -208,11 +212,11 @@ func (m model) fillTable() model {
 		m.table.SetCursor(0)
 	}
 
-	if m.table.Cursor() > len(m.visible) {
-		m.table.SetCursor(len(m.visible) - 1)
-		m.table.GotoBottom()
+	if m.table.Cursor() >= len(m.visible) {
+		m.table.GotoTop()
 	}
-	// log.Println("CURSOR: ", m.table.Cursor())
+	log.Println("CURSOR: ", m.table.Cursor())
+	log.Println("VISIBLE: ", len(m.visible))
 
 	return m
 }
@@ -310,9 +314,9 @@ func (m model) helpView() string {
 
 func main() {
 	var err error
-	tsh, _ = exec.LookPath("tsh")
-	if tsh == "" {
-		panic("teleport `tsh` command not found")
+	nodes, err := NewTeleport()
+	if err != nil {
+		panic(err)
 	}
 
 	f, err := tea.LogToFile("debug.log", "debug")
@@ -347,13 +351,13 @@ func main() {
 	// make sure there's at least one profile in teleport,
 	// if so then it will use that automatically, otherwise
 	// user needs to login first
-	profile, err := CheckProfiles()
+	profile, err := nodes.GetCluster()
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 	if m, err = tea.NewProgram(model{
-		table: t, search: search, profile: profile, spinner: spin,
+		table: t, search: search, profile: profile, spinner: spin, teleport: nodes,
 	}).Run(); err != nil {
 		panic(err)
 	}
@@ -363,8 +367,5 @@ func main() {
 		return
 	}
 
-	err = syscall.Exec(tsh, model.tshCmd, os.Environ())
-	if err != nil {
-		panic(err)
-	}
+	nodes.Connect(model.tshCmd)
 }

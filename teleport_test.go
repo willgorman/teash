@@ -49,7 +49,7 @@ func TestTeleport_GetNodes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := &Teleport{
+			tr := &tshWrapper{
 				nodes: tt.fields.nodes,
 			}
 			got, err := tr.GetNodes(tt.args.refresh)

@@ -4,21 +4,44 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
-type Teleport struct {
-	nodes Nodes
+type tshWrapper struct {
+	nodes   Nodes
+	tshPath string
 }
 
-func New() *Teleport {
-	return &Teleport{
-		nodes: Nodes{},
+func NewTeleport() (Teleport, error) {
+	if demoMode := os.Getenv("TEASH_DEMO"); demoMode != "" {
+		sshPath, _ := exec.LookPath("ssh")
+		if sshPath == "" {
+			return nil, errors.New("`ssh` command not found")
+		}
+		return &demo{sshPath: sshPath, demoServer: demoMode}, nil
+	}
+	tsh, _ = exec.LookPath("tsh")
+	if tsh == "" {
+		return nil, errors.New("teleport `tsh` command not found")
+	}
+	return &tshWrapper{
+		nodes:   Nodes{},
+		tshPath: tsh,
+	}, nil
+}
+
+func (t *tshWrapper) Connect(cmd []string) {
+	err := syscall.Exec(t.tshPath, cmd, os.Environ())
+	if err != nil {
+		panic(err)
 	}
 }
 
-func (t *Teleport) GetNodes(refresh bool) (Nodes, error) {
+func (t *tshWrapper) GetNodes(refresh bool) (Nodes, error) {
 	if len(t.nodes) == 0 || refresh {
 		data := []struct {
 			Kind     string `json:"kind"`
@@ -70,7 +93,7 @@ type Node struct {
 	OS       string
 }
 
-func CheckProfiles() (string, error) {
+func (t *tshWrapper) GetCluster() (string, error) {
 	cmd := exec.Command("tsh", "status", "--format=json")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -143,4 +166,98 @@ func stripInvalidJSONPrefix(data []byte) []byte {
 		}
 		data = data[1:]
 	}
+}
+
+type demo struct {
+	demoServer string
+	sshPath    string
+}
+
+func (d *demo) Connect(_ []string) {
+	log.Println(d.sshPath, d.demoServer)
+	err := syscall.Exec(d.sshPath, []string{"ssh", d.demoServer}, os.Environ())
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (d *demo) GetCluster() (string, error) {
+	return "demo-cluster", nil
+}
+
+func (d *demo) GetNodes(refresh bool) (Nodes, error) {
+	return Nodes{
+		Node{
+			Hostname: "host1.example.com",
+			IP:       "192.168.1.1",
+			OS:       "Ubuntu 22.04",
+			Labels: map[string]string{
+				"Team": "dev",
+				"AZ":   "us-east-1a",
+			},
+		},
+		Node{
+			Hostname: "host2.example.com",
+			IP:       "192.168.1.2",
+			OS:       "Ubuntu 22.04",
+			Labels: map[string]string{
+				"Team": "dev",
+				"AZ":   "us-east-1b",
+			},
+		},
+		Node{
+			Hostname: "host3.example.com",
+			IP:       "192.168.1.3",
+			OS:       "Ubuntu 22.04",
+			Labels: map[string]string{
+				"Team": "dev",
+				"AZ":   "us-east-1b",
+			},
+		},
+		Node{
+			Hostname: "host4.example.com",
+			IP:       "192.168.1.4",
+			OS:       "CentOS Stream",
+			Labels: map[string]string{
+				"Team": "infra",
+				"AZ":   "us-east-1b",
+			},
+		},
+		Node{
+			Hostname: "host5.example.com",
+			IP:       "192.168.1.5",
+			OS:       "CentOS Stream",
+			Labels: map[string]string{
+				"Team": "infra",
+				"AZ":   "us-east-1a",
+			},
+		},
+		Node{
+			Hostname: "host6.example.com",
+			IP:       "192.168.1.6",
+			OS:       "NixOS 23.11",
+			Labels: map[string]string{
+				"Team": "infra",
+				"AZ":   "us-east-1c",
+			},
+		},
+		Node{
+			Hostname: "host7.example.com",
+			IP:       "192.168.1.7",
+			OS:       "NixOS 23.11",
+			Labels: map[string]string{
+				"Team": "infra",
+				"AZ":   "us-east-1c",
+			},
+		},
+		Node{
+			Hostname: "host8.example.com",
+			IP:       "192.168.1.8",
+			OS:       "Rocky Linux 9",
+			Labels: map[string]string{
+				"Team": "dev",
+				"AZ":   "us-east-1a",
+			},
+		},
+	}, nil
 }
