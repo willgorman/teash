@@ -5,22 +5,22 @@
 class Teash < Formula
   desc "A TUI browser for selecting and connecting to servers with Teleport"
   homepage "https://github.com/willgorman/teash"
-  version "0.0.3"
+  version "0.0.4"
 
   depends_on "teleport"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/willgorman/teash/releases/download/v0.0.3/teash_Darwin_x86_64.tar.gz", using: CurlDownloadStrategy
-      sha256 "f38a7605667921d75e3037cc9bd2d262658c1c93e5d0ce2e2f44f8af199bbed3"
+      url "https://github.com/willgorman/teash/releases/download/v0.0.4/teash_Darwin_x86_64.tar.gz", using: CurlDownloadStrategy
+      sha256 "ca93c8ad895e2dd1185b1ec4fadd546623b5f68d65dcd93595661e85ca4ac87a"
 
       def install
         bin.install "teash"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/willgorman/teash/releases/download/v0.0.3/teash_Darwin_arm64.tar.gz", using: CurlDownloadStrategy
-      sha256 "d57f7ef4f733f4cac8db560b92ff1f96bd441479b9c1c4f8b221e2be6951ff4f"
+      url "https://github.com/willgorman/teash/releases/download/v0.0.4/teash_Darwin_arm64.tar.gz", using: CurlDownloadStrategy
+      sha256 "c3ab7257ffbfac31d7620e70c01fa5f72ad0c898eacdb16c7b7ecefaa16249e5"
 
       def install
         bin.install "teash"
@@ -29,17 +29,17 @@ class Teash < Formula
   end
 
   on_linux do
-    if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/willgorman/teash/releases/download/v0.0.3/teash_Linux_arm64.tar.gz", using: CurlDownloadStrategy
-      sha256 "181e27b22b1e4870beb8f506adb9145463b8e23d4542b410cf0c791db5b94e0d"
+    if Hardware::CPU.intel?
+      url "https://github.com/willgorman/teash/releases/download/v0.0.4/teash_Linux_x86_64.tar.gz", using: CurlDownloadStrategy
+      sha256 "9bfe92ce42f3ae1e265d45c65b13f04318120e40c83a154d847dc468cc30b862"
 
       def install
         bin.install "teash"
       end
     end
-    if Hardware::CPU.intel?
-      url "https://github.com/willgorman/teash/releases/download/v0.0.3/teash_Linux_x86_64.tar.gz", using: CurlDownloadStrategy
-      sha256 "7e009bcbaaa94689a0509c64c26d6ab1b9b24acab18188d7e576fcc9e8a3f0fd"
+    if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
+      url "https://github.com/willgorman/teash/releases/download/v0.0.4/teash_Linux_arm64.tar.gz", using: CurlDownloadStrategy
+      sha256 "f3b723f2f2cac1857a30b06eca5255ce9a338c09247c2f45b32668417afbef2f"
 
       def install
         bin.install "teash"
