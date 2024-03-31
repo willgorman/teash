@@ -42,3 +42,102 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
+brews:
+  -
+    # Name of the recipe
+    #
+    # Default: ProjectName
+    # Templates: allowed
+    name: teash
+
+    # NOTE: make sure the url_template, the token and given repo (github or
+    # gitlab) owner and name are from the same kind.
+    # We will probably unify this in the next major version like it is
+    # done with scoop.
+
+    # URL which is determined by the given Token (github, gitlab or gitea).
+    #
+    # Default depends on the client.
+    # Templates: allowed
+    # url_template: "https://github.mycompany.com/foo/bar/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # Headers to include in the `url` stanza.
+    # This can be a more modern alternative to `download_strategy` in some
+    # cases.
+    #
+    # Since: v1.25
+    # url_headers:
+    #   - "Accept: application/octet-stream"
+    #   - 'Authorization: bearer #{ENV["HOMEBREW_GITHUB_API_TOKEN"]}'
+
+    # Allows you to set a custom download strategy. Note that you'll need
+    # to implement the strategy and add it to your tap repository.
+    # Example: https://docs.brew.sh/Formula-Cookbook#specifying-the-download-strategy-explicitly
+    download_strategy: CurlDownloadStrategy
+
+    # Git author used to commit to the repository.
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+
+    # The project name and current git tag are used in the format string.
+    #
+    # Templates: allowed
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+
+    # Folder inside the repository to put the formula.
+    folder: Formula
+
+    # Your app's homepage.
+    homepage: "https://github.com/willgorman/teash"
+
+    # Your app's description.
+    #
+    # Templates: allowed
+    description: "A TUI browser for selecting and connecting to servers with Teleport"
+
+
+    # Setting this will prevent goreleaser to actually try to commit the updated
+    # formula - instead, the formula file will be stored on the dist folder only,
+    # leaving the responsibility of publishing it to the user.
+    # If set to auto, the release will not be uploaded to the homebrew tap
+    # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
+    #
+    # Templates: allowed
+    skip_upload: true
+
+    # Packages your package depends on.
+    dependencies:
+      - name: teleport
+
+    # So you can `brew test` your formula.
+    #
+    # Template: allowed
+    # test: |
+    #   system "#{bin}/foo --version"
+    #   # ...
+
+    # Repository to push the generated files to.
+    repository:
+      # Repository owner.
+      #
+      # Templates: allowed
+      owner: willgorman
+
+      # Repository name.
+      #
+      # Templates: allowed
+      name: teash
+
+      # Optionally a branch can be provided.
+      #
+      # Default: default repository branch
+      # Templates: allowed
+      branch: main
+
+      # Optionally a token can be provided, if it differs from the token
+      # provided to GoReleaser
+      # Templates: allowed
+      # token: "{{ .Env.GITHUB_PERSONAL_AUTH_TOKEN }}"
+
