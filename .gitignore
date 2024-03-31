@@ -27,3 +27,5 @@ go.work
 teash
 
 debug.log
+
+dist/
