@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 )
 
 type tshWrapper struct {
@@ -186,6 +187,7 @@ func (d *demo) GetCluster() (string, error) {
 }
 
 func (d *demo) GetNodes(refresh bool) (Nodes, error) {
+	time.Sleep(2 * time.Second)
 	return Nodes{
 		Node{
 			Hostname: "host1.example.com",
