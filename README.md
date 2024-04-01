@@ -1,6 +1,6 @@
 # teash
 
-Put some bubbletea in your tsh.  Teash is a TUI built with the [bubbletea](https://github.com/charmbracelet/bubbletea) framework that can interactively browse for and connect to a [Teleport](https://goteleport.com/) server.
+`teash` is a TUI built with the [bubbletea](https://github.com/charmbracelet/bubbletea) framework that can interactively browse for and connect to a [Teleport](https://goteleport.com/) server.  Pronounced "tee-ess-aitch", not to be confused with `tsh` (pronounced "tee-ess-aitch")
 
 ![gif example of teash selecting and connecting to a server](example.gif)
 
