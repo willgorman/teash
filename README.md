@@ -13,6 +13,14 @@ brew tap willgorman/teash https://github.com/willgorman/teash
 brew install willgorman/teash/teash 
 ```
 
+### go install
+
+```
+go install github.com/willgorman/teash@latest
+```
+
+When installing using this method you'll need to also [install the appropriate Teleport package containing `tsh`](https://goteleport.com/docs/installation/) for your system.
+
 ## Usage
 
 `teash` uses Teleport's `tsh` command so you'll need to have that installed as well.  Log in with `tsh` as usual:
