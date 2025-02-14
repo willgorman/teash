@@ -62,7 +62,7 @@ type model struct {
 func (m model) Init() tea.Cmd {
 	// TODO: (willgorman) cursor blink?
 	return tea.Batch(func() tea.Msg {
-		nodes, err := m.teleport.GetNodes(true)
+		nodes, err := m.teleport.GetNodes(false)
 		if err != nil {
 			return err
 		}
@@ -359,7 +359,7 @@ func main() {
 		os.Exit(1)
 	}
 	if m, err = tea.NewProgram(model{
-		table: t, search: search, profile: profile, spinner: spin, teleport: nodes,
+		table: t, search: search, profile: profile, spinner: spin, teleport: NewCachingTeleport(nodes),
 	}).Run(); err != nil {
 		panic(err)
 	}
