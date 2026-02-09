@@ -358,6 +358,7 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+	// TODO: refresh cache in the background and send a message to the tea program to update
 	if m, err = tea.NewProgram(model{
 		table: t, search: search, profile: profile, spinner: spin, teleport: NewCachingTeleport(nodes),
 	}).Run(); err != nil {

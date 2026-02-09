@@ -91,6 +91,8 @@ func (c *cachingTeleport) GetNodes(refresh bool) (Nodes, error) {
 		return nodes, nil
 	}
 
+	// TODO: if the cache is old enough (more than a week?) we should ignore
+	// it and get the nodes from teleport
 	if err := c.loadCache(); err != nil {
 		return nil, err
 	}
