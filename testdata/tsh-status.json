@@ -1,0 +1,13 @@
+{
+  "active": {
+    "profile_url": "https://teleport.example.com:443",
+    "username": "user@example.com",
+    "active_requests": [],
+    "cluster": "teleport.example.com",
+    "roles": ["access", "editor"],
+    "traits": {},
+    "logins": ["root", "ubuntu"],
+    "kubernetes_enabled": false,
+    "valid_until": "2026-02-10T12:00:00Z"
+  }
+}

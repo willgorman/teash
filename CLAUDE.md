@@ -13,6 +13,10 @@ This project uses `mise` as a task runner. Available tasks:
 - `mise run test:verbose` -- runs all tests with verbose output
 - `mise run lint` -- runs `go vet`
 
+## Testing the TUI
+
+Use https://github.com/charmbracelet/x/tree/main/exp/teatest to write tests that need to verify that the TUI is rendering correctly. 
+
 ## End to End Tests
 
 Claude must never attempt to connect to a server during testing.  Any end-to-end tests that invoke `tsh ssh` should only be run by the user.  Claude will also not have access to credentials necessary to `tsh login`.  All tests that need to get the list of servers will need to mock the json output of tsh commands using pre-recorded json responses provided by the user.

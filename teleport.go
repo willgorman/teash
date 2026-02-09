@@ -42,44 +42,52 @@ func (t *tshWrapper) Connect(cmd []string) {
 	}
 }
 
+func parseNodesJSON(jsonData []byte) (Nodes, error) {
+	data := []struct {
+		Kind     string `json:"kind"`
+		Metadata struct {
+			Labels map[string]string `json:"labels"`
+		} `json:"metadata"`
+		Spec struct {
+			Hostname  string `json:"hostname"`
+			CmdLabels struct {
+				Ip struct {
+					Result string `json:"result"`
+				} `json:"ip"`
+				Os struct {
+					Result string `json:"result"`
+				} `json:"os"`
+			} `json:"cmd_labels"`
+		} `json:"spec"`
+	}{}
+	err := json.Unmarshal(jsonData, &data)
+	if err != nil {
+		return nil, err
+	}
+	nodes := Nodes{}
+	for _, n := range data {
+		if n.Kind != "node" {
+			continue
+		}
+		nodes = append(nodes, Node{
+			Labels:   n.Metadata.Labels,
+			Hostname: n.Spec.Hostname,
+			IP:       n.Spec.CmdLabels.Ip.Result,
+			OS:       n.Spec.CmdLabels.Os.Result,
+		})
+	}
+	return nodes, nil
+}
+
 func (t *tshWrapper) GetNodes(refresh bool) (Nodes, error) {
 	if len(t.nodes) == 0 || refresh {
-		data := []struct {
-			Kind     string `json:"kind"`
-			Metadata struct {
-				Labels map[string]string `json:"labels"`
-			} `json:"metadata"`
-			Spec struct {
-				Hostname  string `json:"hostname"`
-				CmdLabels struct {
-					Ip struct {
-						Result string `json:"result"`
-					} `json:"ip"`
-					Os struct {
-						Result string `json:"result"`
-					} `json:"os"`
-				} `json:"cmd_labels"`
-			} `json:"spec"`
-		}{}
 		jsonNodes, err := lsNodesJson()
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal([]byte(jsonNodes), &data)
+		t.nodes, err = parseNodesJSON([]byte(jsonNodes))
 		if err != nil {
 			return nil, err
-		}
-		t.nodes = Nodes{}
-		for _, n := range data {
-			if n.Kind != "node" {
-				continue
-			}
-			t.nodes = append(t.nodes, Node{
-				Labels:   n.Metadata.Labels,
-				Hostname: n.Spec.Hostname,
-				IP:       n.Spec.CmdLabels.Ip.Result,
-				OS:       n.Spec.CmdLabels.Os.Result,
-			})
 		}
 	}
 	return t.nodes, nil
@@ -94,22 +102,12 @@ type Node struct {
 	OS       string
 }
 
-func (t *tshWrapper) GetCluster() (string, error) {
-	cmd := exec.Command("tsh", "status", "--format=json")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		if strings.Contains(string(output), "Not logged in") {
-			return "", fmt.Errorf("%s Run `tsh login` first", strings.TrimSpace(string(output)))
-		}
-		return "", fmt.Errorf("%s: %s", err, string(output))
-	}
-
+func parseClusterJSON(data []byte) (string, error) {
 	status := map[string]any{}
-	if err := json.Unmarshal(output, &status); err != nil {
-		return "", fmt.Errorf("`tsh status` returned invalid data, cannot check login:\n%s", string(output))
+	if err := json.Unmarshal(data, &status); err != nil {
+		return "", fmt.Errorf("`tsh status` returned invalid data, cannot check login:\n%s", string(data))
 	}
 
-	// i _think_ that even if the active profile is expired it's still going to be here
 	active, ok := status["active"].(map[string]any)
 	if !ok {
 		return "", errors.New("no active profile found, `tsh login` and try again")
@@ -121,6 +119,19 @@ func (t *tshWrapper) GetCluster() (string, error) {
 	}
 
 	return cluster, nil
+}
+
+func (t *tshWrapper) GetCluster() (string, error) {
+	cmd := exec.Command("tsh", "status", "--format=json")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		if strings.Contains(string(output), "Not logged in") {
+			return "", fmt.Errorf("%s Run `tsh login` first", strings.TrimSpace(string(output)))
+		}
+		return "", fmt.Errorf("%s: %s", err, string(output))
+	}
+
+	return parseClusterJSON(output)
 }
 
 func lsNodesJson() (string, error) {
