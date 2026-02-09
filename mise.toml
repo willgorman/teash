@@ -1,0 +1,15 @@
+[tasks.build]
+description = "Build the teash binary"
+run = "go build -o teash ."
+
+[tasks.test]
+description = "Run all tests"
+run = "go test ./..."
+
+[tasks."test:verbose"]
+description = "Run all tests with verbose output"
+run = "go test -v ./..."
+
+[tasks.lint]
+description = "Run Go vet"
+run = "go vet ./..."
