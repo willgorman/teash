@@ -1,0 +1,15 @@
+[tasks.build]
+description = "Build the teash binary"
+run = "CGO_ENABLED=0 go build -o teash ./cmd/teash"
+
+[tasks.test]
+description = "Run all tests"
+run = "CGO_ENABLED=0 go test ./..."
+
+[tasks."test:verbose"]
+description = "Run all tests with verbose output"
+run = "CGO_ENABLED=0 go test -v ./..."
+
+[tasks.lint]
+description = "Run go vet"
+run = "CGO_ENABLED=0 go vet ./..."

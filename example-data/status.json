@@ -1,0 +1,193 @@
+{
+  "active": {
+    "profile_url": "https://dev-eu-proxy.example.cloud:443",
+    "username": "jane.doe@acme.com",
+    "cluster": "dev-eu-cluster",
+    "roles": [
+      "cloud_alpha",
+      "cloud_beta_platform",
+      "cloud_gamma",
+      "cloud_delta",
+      "cloud_epsilon",
+      "cloud_zeta"
+    ],
+    "traits": {
+      "amr": [
+        "pwd",
+        "otp"
+      ],
+      "email": [
+        "jane.doe"
+      ],
+      "memberOf": [
+        "Org-Acme-Engineering"
+      ],
+      "vpnallowed": [
+        "false"
+      ]
+    },
+    "logins": [
+      "jane.doe"
+    ],
+    "kubernetes_enabled": true,
+    "valid_until": "2026-02-24T01:09:11-06:00",
+    "extensions": [
+      "login-ip",
+      "permit-agent-forwarding",
+      "permit-port-forwarding",
+      "permit-pty",
+      "private-key-policy"
+    ]
+  },
+  "profiles": [
+    {
+      "profile_url": "https://prod-eu-proxy.example.cloud:443",
+      "username": "jane.doe@acme.com",
+      "cluster": "prod-eu-cluster",
+      "roles": [
+        "cloud_alpha",
+        "cloud_beta_platform",
+        "cloud_gamma",
+        "cloud_delta",
+        "cloud_epsilon",
+        "cloud_zeta"
+      ],
+      "traits": {
+        "amr": [
+          "pwd",
+          "otp"
+        ],
+        "email": [
+          "jane.doe"
+        ],
+        "memberOf": [
+          "Org-Acme-Engineering"
+        ]
+      },
+      "logins": [
+        "jane.doe"
+      ],
+      "kubernetes_enabled": true,
+      "valid_until": "2026-02-06T17:14:39-06:00",
+      "extensions": [
+        "login-ip",
+        "permit-agent-forwarding",
+        "permit-port-forwarding",
+        "permit-pty",
+        "private-key-policy"
+      ]
+    },
+    {
+      "profile_url": "https://prod-kr-proxy.example.cloud:443",
+      "username": "jane.doe@acme.com",
+      "cluster": "prod-kr-cluster",
+      "roles": [
+        "cloud_common_platform",
+        "cloud_alpha",
+        "cloud_beta_platform",
+        "cloud_gamma",
+        "cloud_delta",
+        "cloud_epsilon",
+        "cloud_zeta"
+      ],
+      "traits": {
+        "authMethods": [
+          "pwd",
+          "totp"
+        ],
+        "email": [
+          "jane.doe"
+        ],
+        "memberOf": [
+          "Org-Acme-Engineering"
+        ]
+      },
+      "logins": [
+        "jane.doe"
+      ],
+      "kubernetes_enabled": true,
+      "valid_until": "2025-12-11T23:25:54-06:00",
+      "extensions": [
+        "login-ip",
+        "permit-agent-forwarding",
+        "permit-port-forwarding",
+        "permit-pty",
+        "private-key-policy"
+      ]
+    },
+    {
+      "profile_url": "https://prod-sg-proxy.example.cloud:443",
+      "username": "jane.doe@acme.com",
+      "cluster": "prod-sg-cluster",
+      "roles": [
+        "cloud_alpha",
+        "cloud_beta_platform",
+        "cloud_gamma",
+        "cloud_delta",
+        "cloud_epsilon",
+        "cloud_zeta"
+      ],
+      "traits": {
+        "amr": [
+          "pwd",
+          "otp"
+        ],
+        "email": [
+          "jane.doe"
+        ],
+        "memberOf": [
+          "Org-Acme-Engineering"
+        ]
+      },
+      "logins": [
+        "jane.doe"
+      ],
+      "kubernetes_enabled": true,
+      "valid_until": "2026-02-12T16:39:29-06:00",
+      "extensions": [
+        "login-ip",
+        "permit-agent-forwarding",
+        "permit-port-forwarding",
+        "permit-pty",
+        "private-key-policy"
+      ]
+    },
+    {
+      "profile_url": "https://prod-us-proxy.example.cloud:443",
+      "username": "jane.doe@acme.com",
+      "cluster": "prod-us-cluster",
+      "roles": [
+        "cloud_alpha",
+        "cloud_beta_platform",
+        "cloud_gamma",
+        "cloud_delta",
+        "cloud_epsilon",
+        "cloud_zeta"
+      ],
+      "traits": {
+        "amr": [
+          "pwd",
+          "otp"
+        ],
+        "email": [
+          "jane.doe"
+        ],
+        "memberOf": [
+          "Org-Acme-Engineering"
+        ]
+      },
+      "logins": [
+        "jane.doe"
+      ],
+      "kubernetes_enabled": true,
+      "valid_until": "2026-02-17T17:53:19-06:00",
+      "extensions": [
+        "login-ip",
+        "permit-agent-forwarding",
+        "permit-port-forwarding",
+        "permit-pty",
+        "private-key-policy"
+      ]
+    }
+  ]
+}
