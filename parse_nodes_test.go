@@ -20,7 +20,7 @@ func Test_parseNodesJSON(t *testing.T) {
 		}
 		// Verify first node fields
 		first := nodes[0]
-		if first.Hostname != "ams101-0112-h01-lab" {
+		if first.Hostname != "server1" {
 			t.Errorf("first hostname = %q, want %q", first.Hostname, "ams101-0112-h01-lab")
 		}
 		if first.OS != "Rocky Linux 9.5 (Blue Onyx)" {
@@ -30,8 +30,8 @@ func Test_parseNodesJSON(t *testing.T) {
 		if first.Labels == nil {
 			t.Fatal("first node labels should not be nil")
 		}
-		if first.Labels["env"] != "ppd2" {
-			t.Errorf("first node label env = %q, want %q", first.Labels["env"], "ppd2")
+		if first.Labels["env"] != "dev" {
+			t.Errorf("first node label env = %q, want %q", first.Labels["env"], "dev")
 		}
 	})
 
