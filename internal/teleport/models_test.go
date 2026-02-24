@@ -161,8 +161,8 @@ func TestStatus_AvailableClusters(t *testing.T) {
 	}
 
 	clusters := status.AvailableClusters()
-	if len(clusters) != 5 { // 1 active + 4 profiles
-		t.Errorf("expected 5 clusters, got %d: %v", len(clusters), clusters)
+	if len(clusters) != 3 { // 1 active + 2 profiles
+		t.Errorf("expected 3 clusters, got %d: %v", len(clusters), clusters)
 	}
 
 	// Active cluster should be first
