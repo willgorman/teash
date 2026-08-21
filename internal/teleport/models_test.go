@@ -43,9 +43,15 @@ func TestParseNodesJSON(t *testing.T) {
 	}
 
 	// Check that cmd_label results are extracted
-	// "hostname" and "vm" cmd_labels should appear in Labels
-	if _, ok := first.Labels["hostname"]; !ok {
-		t.Error("expected 'hostname' from cmd_labels in Labels")
+	// "vm" cmd_label should appear in Labels
+	if _, ok := first.Labels["vm"]; !ok {
+		t.Error("expected 'vm' from cmd_labels in Labels")
+	}
+
+	// "hostname" cmd_label should NOT appear in Labels since it duplicates
+	// the dedicated Hostname field/column
+	if _, ok := first.Labels["hostname"]; ok {
+		t.Error("did not expect 'hostname' from cmd_labels in Labels; it should populate Server.Hostname instead")
 	}
 
 	// OS should be populated from cmd_labels.os.result
@@ -96,10 +102,16 @@ func TestAllLabelKeys(t *testing.T) {
 	for _, k := range keys {
 		found[k] = true
 	}
-	for _, expected := range []string{"env", "region", "category1", "hostname", "teleport", "vm"} {
+	for _, expected := range []string{"env", "region", "category1", "teleport", "vm"} {
 		if !found[expected] {
 			t.Errorf("expected label key %q in AllLabelKeys", expected)
 		}
+	}
+
+	// "hostname" cmd_label should not leak into label keys; it's already
+	// represented by the dedicated Hostname column.
+	if found["hostname"] {
+		t.Error("did not expect 'hostname' in AllLabelKeys")
 	}
 
 	// Should be sorted

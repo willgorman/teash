@@ -95,10 +95,10 @@ func (s *Status) AvailableClusters() []string {
 // Server is a flattened, app-level representation of a Teleport server node.
 type Server struct {
 	ID       string            // metadata.name (UUID)
-	Hostname string            // spec.hostname
+	Hostname string            // spec.hostname or cmd_labels.hostname.result
 	Addr     string            // spec.addr or cmd_labels.ip.result
 	OS       string            // cmd_labels.os.result
-	Labels   map[string]string // merged: metadata.labels + cmd_label results
+	Labels   map[string]string // merged: metadata.labels + cmd_label results (excluding hostname/ip/os)
 }
 
 // ParseNodes converts raw tsh Node objects into flattened Server structs.
@@ -126,6 +126,10 @@ func ParseNodes(nodes []Node) []Server {
 				}
 			case "os":
 				s.OS = cl.Result
+			case "hostname":
+				if s.Hostname == "" {
+					s.Hostname = cl.Result
+				}
 			default:
 				s.Labels[k] = cl.Result
 			}
