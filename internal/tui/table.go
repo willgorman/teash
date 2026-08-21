@@ -11,6 +11,8 @@ const (
 	colHostname = "hostname"
 	colIP       = "ip"
 	colOS       = "os"
+
+	minLabelWidth = 10
 )
 
 func buildColumns(labelKeys []string, width int) []table.Column {
@@ -25,15 +27,11 @@ func buildColumns(labelKeys []string, width int) []table.Column {
 		table.NewColumn(colOS, "OS", osW).WithFiltered(true),
 	}
 
-	labelW := 16
+	labelW := minLabelWidth
 	if len(labelKeys) > 0 && width > 0 {
 		remaining := width - hostnameW - ipW - osW - 4 // borders/padding
-		if remaining > 0 {
-			perCol := remaining / len(labelKeys)
-			if perCol > 8 {
-				labelW = perCol
-			}
-		}
+		perCol := remaining / len(labelKeys)
+		labelW = max(perCol, minLabelWidth)
 	}
 
 	for _, key := range labelKeys {
@@ -81,7 +79,8 @@ func buildTable(servers []app.ServerView, labelKeys []string, width, height int)
 		WithBaseStyle(lipgloss.NewStyle().Align(lipgloss.Left))
 
 	if width > 0 {
-		t = t.WithTargetWidth(width)
+		t = t.WithMaxTotalWidth(width).
+			WithHorizontalFreezeColumnCount(3)
 	}
 
 	return t

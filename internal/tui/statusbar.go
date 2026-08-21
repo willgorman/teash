@@ -39,7 +39,7 @@ func (m Model) renderStatusBar() string {
 		modeStr = " | MODE: column filter"
 	}
 
-	help := styleHelp.Render(" | j/k:nav enter:ssh r:refresh a:label /:search c:filter q:quit")
+	help := styleHelp.Render(" | j/k:nav enter:ssh r:refresh a:label /:search c:filter shift+←/→:scroll cols q:quit")
 
 	return styleStatusBar.Render(clusterStr + count + cacheAge + status + modeStr + errStr + help)
 }
