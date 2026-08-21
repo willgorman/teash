@@ -8,7 +8,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evertras/bubble-table/table"
-	"github.com/sahilm/fuzzy"
 
 	"github.com/willgorman/teash/internal/app"
 )
@@ -26,23 +25,23 @@ const (
 
 // Model is the top-level BubbleTea model for the TUI.
 type Model struct {
-	service    *app.Service
-	table      table.Model
-	servers    []app.ServerView
-	labelKeys  []string
-	mode       Mode
-	width      int
-	height     int
-	err        error
-	status     string
-	ready      bool
-	refreshing     bool
-	labelInput     labelInput
-	needLogin      bool
-	searchInput    searchInput
-	colSelector    columnSelector
-	activeFilter   string // column being filtered
-	activeFilterVal string // filter value applied
+	service       *app.Service
+	table         table.Model
+	servers       []app.ServerView
+	labelKeys     []string
+	mode          Mode
+	width         int
+	height        int
+	err           error
+	status        string
+	ready         bool
+	refreshing    bool
+	labelInput    labelInput
+	needLogin     bool
+	searchInput   searchInput
+	colSelector   columnSelector
+	columnFilters []app.ColumnFilter // AND'd across columns, OR'd within a column
+	activeSearch  string             // active '/' free-text query; mutually exclusive with columnFilters
 }
 
 // New creates a new TUI Model backed by the given service.
@@ -107,18 +106,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		if m.ready {
-			m.table = buildTable(m.servers, m.labelKeys, m.width, m.height)
+			m.table = buildTable(m.visibleServers(), m.labelKeys, m.width, m.height)
 		}
 		return m, nil
 
 	case serversLoadedMsg:
 		m.servers = msg.servers
 		m.labelKeys = msg.labelKeys
-		m.table = buildTable(m.servers, m.labelKeys, m.width, m.height)
+		m.table = buildTable(m.visibleServers(), m.labelKeys, m.width, m.height)
 		m.ready = true
 		m.err = nil
 		m.refreshing = false
-		m.status = ""
+		m.status = m.filterStatus()
 		return m, nil
 
 	case errMsg:
@@ -234,13 +233,17 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case isKey(msg, KeySearch):
+		m.columnFilters = nil
 		m.mode = ModeSearch
 		m.searchInput = newSearchInput()
+		m.table = buildTable(m.visibleServers(), m.labelKeys, m.width, m.height)
 		return m, m.searchInput.input.Focus()
 	case isKey(msg, KeyColFilter):
+		m.activeSearch = ""
 		allCols := append([]string{colHostname, colIP, colOS}, m.labelKeys...)
 		m.colSelector = newColumnSelector(allCols)
 		m.mode = ModeColumnFilter
+		m.table = buildTable(m.visibleServers(), m.labelKeys, m.width, m.height)
 		return m, nil
 	}
 
@@ -255,21 +258,16 @@ func (m Model) handleSearchKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case isKey(msg, KeyEscape):
 		// Clear search and return to normal
 		m.mode = ModeNormal
-		m.table = buildTable(m.servers, m.labelKeys, m.width, m.height)
+		m.activeSearch = ""
+		m.table = buildTable(m.visibleServers(), m.labelKeys, m.width, m.height)
 		m.status = ""
 		return m, nil
 	case isKey(msg, KeyEnter):
 		// Apply search
-		query := m.searchInput.Value()
 		m.mode = ModeNormal
-		if query == "" {
-			m.table = buildTable(m.servers, m.labelKeys, m.width, m.height)
-			return m, nil
-		}
-		// Filter rows by matching against all columns
-		filtered := m.filterServersByText(query)
-		m.table = buildTable(filtered, m.labelKeys, m.width, m.height)
-		m.status = fmt.Sprintf("Filter: %q (%d results)", query, len(filtered))
+		m.activeSearch = m.searchInput.Value()
+		m.table = buildTable(m.visibleServers(), m.labelKeys, m.width, m.height)
+		m.status = m.filterStatus()
 		return m, nil
 	}
 
@@ -280,7 +278,7 @@ func (m Model) handleSearchKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) handleColumnFilterKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.mode == ModeColumnFilter {
-		// Choosing a column
+		// Level 1: choosing a column
 		switch {
 		case isKey(msg, KeyEscape):
 			m.mode = ModeNormal
@@ -295,41 +293,103 @@ func (m Model) handleColumnFilterKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.colSelector.selected--
 			}
 			return m, nil
+		case isKey(msg, KeyClearFilter):
+			col := m.colSelector.SelectedColumn()
+			m.columnFilters = removeColumnFilter(m.columnFilters, col)
+			m.table = buildTable(m.visibleServers(), m.labelKeys, m.width, m.height)
+			m.status = m.filterStatus()
+			return m, nil
 		case isKey(msg, KeyEnter):
+			col := m.colSelector.SelectedColumn()
+			allValues := app.DistinctColumnValues(m.servers, col)
+			m.colSelector = m.colSelector.enterValues(allValues)
 			m.mode = ModeColumnFilterValue
-			m.colSelector.choosing = false
 			return m, m.colSelector.input.Focus()
 		}
 		return m, nil
 	}
 
-	// ModeColumnFilterValue - entering the filter value
+	// Level 2: value checklist for the chosen column
 	switch {
-	case isKey(msg, KeyEscape):
-		m.mode = ModeNormal
+	case isKey(msg, KeyEscape, KeyEnter):
+		m.colSelector = m.colSelector.backToColumns()
+		m.mode = ModeColumnFilter
 		return m, nil
-	case isKey(msg, KeyEnter):
+	case isKey(msg, KeyToggle):
 		col := m.colSelector.SelectedColumn()
-		val := m.colSelector.FilterValue()
-		m.mode = ModeNormal
-		if val == "" {
-			// Clear filter
-			m.table = buildTable(m.servers, m.labelKeys, m.width, m.height)
-			m.activeFilter = ""
-			m.activeFilterVal = ""
-			return m, nil
+		val := m.colSelector.HighlightedValue()
+		if val != "" {
+			m.columnFilters = toggleColumnFilterValue(m.columnFilters, col, val)
+			m.table = buildTable(m.visibleServers(), m.labelKeys, m.width, m.height)
+			m.status = m.filterStatus()
 		}
-		filtered := m.filterServersByColumn(col, val)
-		m.table = buildTable(filtered, m.labelKeys, m.width, m.height)
-		m.activeFilter = col
-		m.activeFilterVal = val
-		m.status = fmt.Sprintf("Filter: %s=%q (%d results)", col, val, len(filtered))
+		return m, nil
+	case isKey(msg, KeyDownArrow, KeyCtrlNext):
+		if m.colSelector.valueCursor < len(m.colSelector.values)-1 {
+			m.colSelector.valueCursor++
+		}
+		return m, nil
+	case isKey(msg, KeyUpArrow, KeyCtrlPrev):
+		if m.colSelector.valueCursor > 0 {
+			m.colSelector.valueCursor--
+		}
 		return m, nil
 	}
 
 	var cmd tea.Cmd
 	m.colSelector, cmd = m.colSelector.Update(msg)
 	return m, cmd
+}
+
+// removeColumnFilter returns filters with the entry for col dropped, if any.
+func removeColumnFilter(filters []app.ColumnFilter, col string) []app.ColumnFilter {
+	result := make([]app.ColumnFilter, 0, len(filters))
+	for _, f := range filters {
+		if f.Column != col {
+			result = append(result, f)
+		}
+	}
+	return result
+}
+
+// toggleColumnFilterValue adds val to col's OR set if absent, or removes it
+// if present (dropping the column entirely once its set is empty).
+func toggleColumnFilterValue(filters []app.ColumnFilter, col, val string) []app.ColumnFilter {
+	for i, f := range filters {
+		if f.Column != col {
+			continue
+		}
+		for j, v := range f.Values {
+			if v == val {
+				f.Values = append(f.Values[:j], f.Values[j+1:]...)
+				if len(f.Values) == 0 {
+					return removeColumnFilter(filters, col)
+				}
+				filters[i] = f
+				return filters
+			}
+		}
+		f.Values = append(f.Values, val)
+		filters[i] = f
+		return filters
+	}
+	return append(filters, app.ColumnFilter{Column: col, Values: []string{val}})
+}
+
+// filterStatus renders a compact summary of whichever filter is active
+// (column filters or free-text search), or "" if neither is active.
+func (m Model) filterStatus() string {
+	if len(m.columnFilters) > 0 {
+		parts := make([]string, 0, len(m.columnFilters))
+		for _, f := range m.columnFilters {
+			parts = append(parts, fmt.Sprintf("%s=%s", f.Column, strings.Join(f.Values, ",")))
+		}
+		return fmt.Sprintf("Filters: %s (%d results)", strings.Join(parts, " AND "), len(m.visibleServers()))
+	}
+	if m.activeSearch != "" {
+		return fmt.Sprintf("Filter: %q (%d results)", m.activeSearch, len(m.visibleServers()))
+	}
+	return ""
 }
 
 func (m Model) handleAddLabelKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -378,7 +438,7 @@ func (m Model) View() string {
 	case ModeSearch:
 		s += m.searchInput.View() + "\n"
 	case ModeColumnFilter, ModeColumnFilterValue:
-		s += m.colSelector.View()
+		s += m.colSelector.View(m.columnFilters)
 	default:
 		s += m.renderStatusBar()
 	}
@@ -386,54 +446,16 @@ func (m Model) View() string {
 	return s
 }
 
-// filterServersByText fuzzy-matches a whitespace-separated query against all
-// columns (hostname, IP, OS, labels). Each word in the query must fuzzy-match
-// at least one column (AND across words, OR across columns), so e.g. "rocky dev"
-// matches a server with OS "Rocky Linux 9" and label "environment: dev".
-func (m Model) filterServersByText(query string) []app.ServerView {
-	words := strings.Fields(query)
-	var result []app.ServerView
-	for _, sv := range m.servers {
-		fields := make([]string, 0, 3+len(sv.AllLabels))
-		fields = append(fields, sv.Hostname, sv.Addr, sv.OS)
-		for _, v := range sv.AllLabels {
-			fields = append(fields, v)
-		}
-
-		matchesAllWords := true
-		for _, word := range words {
-			if len(fuzzy.Find(word, fields)) == 0 {
-				matchesAllWords = false
-				break
-			}
-		}
-		if matchesAllWords {
-			result = append(result, sv)
-		}
+// visibleServers returns m.servers narrowed by whichever filter is active.
+// Column filters and free-text search are mutually exclusive.
+func (m Model) visibleServers() []app.ServerView {
+	if len(m.columnFilters) > 0 {
+		return app.FilterServers(m.servers, m.columnFilters)
 	}
-	return result
-}
-
-func (m Model) filterServersByColumn(col, value string) []app.ServerView {
-	value = strings.ToLower(value)
-	var result []app.ServerView
-	for _, sv := range m.servers {
-		var fieldVal string
-		switch col {
-		case colHostname:
-			fieldVal = sv.Hostname
-		case colIP:
-			fieldVal = sv.Addr
-		case colOS:
-			fieldVal = sv.OS
-		default:
-			fieldVal = sv.AllLabels[col]
-		}
-		if strings.Contains(strings.ToLower(fieldVal), value) {
-			result = append(result, sv)
-		}
+	if m.activeSearch != "" {
+		return app.FilterServersByText(m.servers, m.activeSearch)
 	}
-	return result
+	return m.servers
 }
 
 // SelectedServer returns the currently highlighted server, if any.

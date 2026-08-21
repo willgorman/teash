@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	colHostname = "hostname"
-	colIP       = "ip"
-	colOS       = "os"
+	colHostname = app.ColHostname
+	colIP       = app.ColIP
+	colOS       = app.ColOS
 
 	minLabelWidth = 10
 )
