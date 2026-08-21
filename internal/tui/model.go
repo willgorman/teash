@@ -285,22 +285,12 @@ func (m Model) handleColumnFilterKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case isKey(msg, KeyEscape):
 			m.mode = ModeNormal
 			return m, nil
-		case isKey(msg, KeyDown, KeyDown):
+		case isKey(msg, KeyDown, KeyDownArrow, KeyCtrlNext):
 			if m.colSelector.selected < len(m.colSelector.columns)-1 {
 				m.colSelector.selected++
 			}
 			return m, nil
-		case isKey(msg, KeyUp):
-			if m.colSelector.selected > 0 {
-				m.colSelector.selected--
-			}
-			return m, nil
-		case isKey(msg, "j"):
-			if m.colSelector.selected < len(m.colSelector.columns)-1 {
-				m.colSelector.selected++
-			}
-			return m, nil
-		case isKey(msg, "k"):
+		case isKey(msg, KeyUp, KeyUpArrow, KeyCtrlPrev):
 			if m.colSelector.selected > 0 {
 				m.colSelector.selected--
 			}
