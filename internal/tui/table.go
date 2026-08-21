@@ -63,10 +63,15 @@ func buildTable(servers []app.ServerView, labelKeys []string, width, height int)
 	cols := buildColumns(labelKeys, width)
 	rows := buildRows(servers, labelKeys)
 
-	tableHeight := height - 4 // leave room for status bar
-	if tableHeight < 3 {
-		tableHeight = 3
-	}
+	// The table chrome (top/bottom borders, header separator, footer
+	// separator + pagination footer) always adds 6 lines on top of the
+	// visible data rows, and the status bar below the table takes 1 more.
+	// Under-reserving here causes the rendered output to exceed the
+	// terminal height, which pushes the header off-screen via terminal
+	// scrollback instead of the table's own (header-preserving) pagination.
+	const tableChromeLines = 6
+	const statusBarLines = 1
+	tableHeight := max(height-tableChromeLines-statusBarLines, 3)
 
 	t := table.New(cols).
 		WithRows(rows).

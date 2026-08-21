@@ -1,12 +1,4 @@
-## Flox Environment Manifest -----------------------------------------
-##
-##   _Everything_ you need to know about the _manifest_ is here:
-##
-##   https://flox.dev/docs/reference/command-reference/manifest.toml/
-##
-## -------------------------------------------------------------------
-# Flox manifest version managed by Flox CLI
-version = 1
+schema-version = "1.11.0"
 
 
 ## Install Packages --------------------------------------------------
@@ -15,17 +7,14 @@ version = 1
 ##  $ flox show gum     <- show all versions of a package
 ## -------------------------------------------------------------------
 [install]
-claude-code.pkg-path = "claude-code"
-claude-code.pkg-group = "claude-code"
 mise.pkg-path = "mise"
-flox-mcp-server.pkg-path = "flox/flox-mcp-server"
-flox-mcp-server.systems = ["aarch64-darwin", "x86_64-linux", "aarch64-linux"]
-flox-mcp-server.pkg-group = "flox-mcp-server"
 gh.pkg-path = "gh"
 go.pkg-path = "go"
 gopls.pkg-path = "gopls"
 teleport.pkg-path = "teleport"
-teleport.version = "16.4.16"
+teleport.pkg-group = "teleport"
+teleport.version = "17"
+teleport.outputs = "all"
 # gum.pkg-path = "gum"
 # gum.version = "^0.14.5"
 

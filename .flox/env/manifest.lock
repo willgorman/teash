@@ -1,21 +1,8 @@
 {
   "lockfile-version": 1,
   "manifest": {
-    "version": 1,
+    "schema-version": "1.11.0",
     "install": {
-      "claude-code": {
-        "pkg-path": "claude-code",
-        "pkg-group": "claude-code"
-      },
-      "flox-mcp-server": {
-        "pkg-path": "flox/flox-mcp-server",
-        "pkg-group": "flox-mcp-server",
-        "systems": [
-          "aarch64-darwin",
-          "x86_64-linux",
-          "aarch64-linux"
-        ]
-      },
       "gh": {
         "pkg-path": "gh"
       },
@@ -30,7 +17,9 @@
       },
       "teleport": {
         "pkg-path": "teleport",
-        "version": "16.4.16"
+        "pkg-group": "teleport",
+        "version": "17",
+        "outputs": "all"
       }
     },
     "hook": {},
@@ -38,216 +27,6 @@
     "options": {}
   },
   "packages": [
-    {
-      "attr_path": "claude-code",
-      "broken": false,
-      "derivation": "/nix/store/b843f9gvy3plcvbg1xd454bnaabh694a-claude-code-2.1.39.drv",
-      "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
-      "install_id": "claude-code",
-      "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=0182a361324364ae3f436a63005877674cf45efb",
-      "name": "claude-code-2.1.39",
-      "pname": "claude-code",
-      "rev": "0182a361324364ae3f436a63005877674cf45efb",
-      "rev_count": 948083,
-      "rev_date": "2026-02-17T23:04:30Z",
-      "scrape_date": "2026-02-19T04:39:52.326846Z",
-      "stabilities": [
-        "staging",
-        "unstable"
-      ],
-      "unfree": true,
-      "version": "2.1.39",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/jxyjdnn3nmvjqv7n1diiysb799qfvr60-claude-code-2.1.39"
-      },
-      "system": "aarch64-darwin",
-      "group": "claude-code",
-      "priority": 5
-    },
-    {
-      "attr_path": "claude-code",
-      "broken": false,
-      "derivation": "/nix/store/vm72qxdm91slf7w0zax2nhp6hbiwhbjb-claude-code-2.1.39.drv",
-      "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
-      "install_id": "claude-code",
-      "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=0182a361324364ae3f436a63005877674cf45efb",
-      "name": "claude-code-2.1.39",
-      "pname": "claude-code",
-      "rev": "0182a361324364ae3f436a63005877674cf45efb",
-      "rev_count": 948083,
-      "rev_date": "2026-02-17T23:04:30Z",
-      "scrape_date": "2026-02-19T05:12:54.074117Z",
-      "stabilities": [
-        "staging",
-        "unstable"
-      ],
-      "unfree": true,
-      "version": "2.1.39",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/sjqfnb9anq60yi7rb835ig7bqh4hg5q8-claude-code-2.1.39"
-      },
-      "system": "aarch64-linux",
-      "group": "claude-code",
-      "priority": 5
-    },
-    {
-      "attr_path": "claude-code",
-      "broken": false,
-      "derivation": "/nix/store/ccd45sx0mvmwp2imi9pvr54rnsx20cc4-claude-code-2.1.39.drv",
-      "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
-      "install_id": "claude-code",
-      "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=0182a361324364ae3f436a63005877674cf45efb",
-      "name": "claude-code-2.1.39",
-      "pname": "claude-code",
-      "rev": "0182a361324364ae3f436a63005877674cf45efb",
-      "rev_count": 948083,
-      "rev_date": "2026-02-17T23:04:30Z",
-      "scrape_date": "2026-02-19T05:45:37.347096Z",
-      "stabilities": [
-        "staging",
-        "unstable"
-      ],
-      "unfree": true,
-      "version": "2.1.39",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/ms34ydrd192vvh8bw0jfv7kdi3qm0l1x-claude-code-2.1.39"
-      },
-      "system": "x86_64-darwin",
-      "group": "claude-code",
-      "priority": 5
-    },
-    {
-      "attr_path": "claude-code",
-      "broken": false,
-      "derivation": "/nix/store/dzgmms21s6hiywhh2ypmvrmny2mncfnk-claude-code-2.1.39.drv",
-      "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
-      "install_id": "claude-code",
-      "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=0182a361324364ae3f436a63005877674cf45efb",
-      "name": "claude-code-2.1.39",
-      "pname": "claude-code",
-      "rev": "0182a361324364ae3f436a63005877674cf45efb",
-      "rev_count": 948083,
-      "rev_date": "2026-02-17T23:04:30Z",
-      "scrape_date": "2026-02-19T06:23:23.145961Z",
-      "stabilities": [
-        "staging",
-        "unstable"
-      ],
-      "unfree": true,
-      "version": "2.1.39",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/1730mk79ga0f71h41bb05m6lg5hs31r5-claude-code-2.1.39"
-      },
-      "system": "x86_64-linux",
-      "group": "claude-code",
-      "priority": 5
-    },
-    {
-      "attr_path": "flox-mcp-server",
-      "broken": false,
-      "derivation": "/nix/store/inlxks5yk57808y2kc654g2y2wdh73hh-flox-mcp-server-0.2.2.drv",
-      "description": "MCP server for Flox package manager",
-      "install_id": "flox-mcp-server",
-      "license": "MIT",
-      "locked_url": "https://github.com/flox/mcp-server?rev=61f940167b7a1d245e314fb84668232ed7195f93",
-      "name": "flox-mcp-server-0.2.2",
-      "pname": "flox-mcp-server",
-      "rev": "61f940167b7a1d245e314fb84668232ed7195f93",
-      "rev_count": 30,
-      "rev_date": "2026-02-03T16:40:14Z",
-      "scrape_date": "2026-02-24T15:47:21.272415209Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "0.2.2",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "dist": "/nix/store/hdfanrwiqj9302qiivnpqanfq1zk8srh-flox-mcp-server-0.2.2-dist",
-        "out": "/nix/store/6ln8l75s9pi54xz1dlksya8rlq8cz230-flox-mcp-server-0.2.2"
-      },
-      "system": "aarch64-darwin",
-      "group": "flox-mcp-server",
-      "priority": 5
-    },
-    {
-      "attr_path": "flox-mcp-server",
-      "broken": false,
-      "derivation": "/nix/store/pdimfq1f3l2kmx2plr6xpas8abby5y2p-flox-mcp-server-0.2.2.drv",
-      "description": "MCP server for Flox package manager",
-      "install_id": "flox-mcp-server",
-      "license": "MIT",
-      "locked_url": "https://github.com/flox/mcp-server?rev=61f940167b7a1d245e314fb84668232ed7195f93",
-      "name": "flox-mcp-server-0.2.2",
-      "pname": "flox-mcp-server",
-      "rev": "61f940167b7a1d245e314fb84668232ed7195f93",
-      "rev_count": 30,
-      "rev_date": "2026-02-03T16:40:14Z",
-      "scrape_date": "2026-02-24T15:47:21.272416542Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "0.2.2",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "dist": "/nix/store/6zjsiagcmx2qflf30kgcnfakipynghlk-flox-mcp-server-0.2.2-dist",
-        "out": "/nix/store/h4y7xqn88gyxd7vymv40y9jnf4l06p5i-flox-mcp-server-0.2.2"
-      },
-      "system": "aarch64-linux",
-      "group": "flox-mcp-server",
-      "priority": 5
-    },
-    {
-      "attr_path": "flox-mcp-server",
-      "broken": false,
-      "derivation": "/nix/store/nnqy64nl48nwnz26x2kwagr10ryz54yg-flox-mcp-server-0.2.2.drv",
-      "description": "MCP server for Flox package manager",
-      "install_id": "flox-mcp-server",
-      "license": "MIT",
-      "locked_url": "https://github.com/flox/mcp-server?rev=61f940167b7a1d245e314fb84668232ed7195f93",
-      "name": "flox-mcp-server-0.2.2",
-      "pname": "flox-mcp-server",
-      "rev": "61f940167b7a1d245e314fb84668232ed7195f93",
-      "rev_count": 30,
-      "rev_date": "2026-02-03T16:40:14Z",
-      "scrape_date": "2026-02-24T15:47:21.272417042Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "0.2.2",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "dist": "/nix/store/g2xdbvax1d4yv0czq31pkfnyf5snynh1-flox-mcp-server-0.2.2-dist",
-        "out": "/nix/store/xwcqr4jvj2fqnm6jhxaakigbry38y7vk-flox-mcp-server-0.2.2"
-      },
-      "system": "x86_64-linux",
-      "group": "flox-mcp-server",
-      "priority": 5
-    },
     {
       "attr_path": "gh",
       "broken": false,
@@ -731,125 +510,129 @@
     {
       "attr_path": "teleport",
       "broken": false,
-      "derivation": "/nix/store/14amf7f027w2b24qk9p6j6w2ji7anwk4-teleport-16.4.16.drv",
+      "derivation": "/nix/store/dfd55zlnk0a4ia72f7ggfwhilgbsvw32-teleport-17.7.3.drv",
       "description": "Certificate authority and access plane for SSH, Kubernetes, web applications, and databases",
       "install_id": "teleport",
       "license": "AGPL-3.0-or-later",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=6607cf789e541e7873d40d3a8f7815ea92204f32",
-      "name": "teleport-16.4.16",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=01f116e4df6a15f4ccdffb1bcd41096869fb385c",
+      "name": "teleport-17.7.3",
       "pname": "teleport",
-      "rev": "6607cf789e541e7873d40d3a8f7815ea92204f32",
-      "rev_count": 767267,
-      "rev_date": "2025-03-13T07:39:42Z",
-      "scrape_date": "2025-03-14T00:31:05Z",
+      "rev": "01f116e4df6a15f4ccdffb1bcd41096869fb385c",
+      "rev_count": 882227,
+      "rev_date": "2025-10-22T06:30:52Z",
+      "scrape_date": "2025-10-24T01:13:37.647794Z",
       "stabilities": [
+        "stable",
         "staging",
         "unstable"
       ],
       "unfree": false,
-      "version": "16.4.16",
+      "version": "17.7.3",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "client": "/nix/store/7zigf12sd9gdfapaa4n18lmq0lcm1cby-teleport-16.4.16-client",
-        "out": "/nix/store/0znji1x8pfzbn1hnp23f0zi3w49vzc3r-teleport-16.4.16"
+        "client": "/nix/store/z63vn745n2x6lm9arfdaazhlfm51iv2a-teleport-17.7.3-client",
+        "out": "/nix/store/15hpsi3i1mi2c2j1jxni8d0spqgphyfg-teleport-17.7.3"
       },
       "system": "aarch64-darwin",
-      "group": "toplevel",
+      "group": "teleport",
       "priority": 5
     },
     {
       "attr_path": "teleport",
       "broken": false,
-      "derivation": "/nix/store/n17njxbma59gl9b05cbz0rh3z6z0ifyd-teleport-16.4.16.drv",
+      "derivation": "/nix/store/shj0abvyi5hcal2xi1jafvh6aw9vm671-teleport-17.7.3.drv",
       "description": "Certificate authority and access plane for SSH, Kubernetes, web applications, and databases",
       "install_id": "teleport",
       "license": "AGPL-3.0-or-later",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=6607cf789e541e7873d40d3a8f7815ea92204f32",
-      "name": "teleport-16.4.16",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=01f116e4df6a15f4ccdffb1bcd41096869fb385c",
+      "name": "teleport-17.7.3",
       "pname": "teleport",
-      "rev": "6607cf789e541e7873d40d3a8f7815ea92204f32",
-      "rev_count": 767267,
-      "rev_date": "2025-03-13T07:39:42Z",
-      "scrape_date": "2025-03-14T00:31:05Z",
+      "rev": "01f116e4df6a15f4ccdffb1bcd41096869fb385c",
+      "rev_count": 882227,
+      "rev_date": "2025-10-22T06:30:52Z",
+      "scrape_date": "2025-10-24T01:50:56.576170Z",
       "stabilities": [
+        "stable",
         "staging",
         "unstable"
       ],
       "unfree": false,
-      "version": "16.4.16",
+      "version": "17.7.3",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "client": "/nix/store/c8dbxhkzxqs7qqvczm80adhzlvn05gpy-teleport-16.4.16-client",
-        "out": "/nix/store/ydmhw0rq2ycr5j9cm25x947nxf6f7igp-teleport-16.4.16"
+        "client": "/nix/store/1grj8frwrybrq6jkycd580gwrnn5jjjy-teleport-17.7.3-client",
+        "out": "/nix/store/m5bwj0l65xzv4yq784950ql6bhl5334f-teleport-17.7.3"
       },
       "system": "aarch64-linux",
-      "group": "toplevel",
+      "group": "teleport",
       "priority": 5
     },
     {
       "attr_path": "teleport",
       "broken": false,
-      "derivation": "/nix/store/kzdhyn6jb683wwriqxwbk06jbmah66a6-teleport-16.4.16.drv",
+      "derivation": "/nix/store/9jghyk69c5yl1007p5vndq5fhriccmmk-teleport-17.7.3.drv",
       "description": "Certificate authority and access plane for SSH, Kubernetes, web applications, and databases",
       "install_id": "teleport",
       "license": "AGPL-3.0-or-later",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=6607cf789e541e7873d40d3a8f7815ea92204f32",
-      "name": "teleport-16.4.16",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=01f116e4df6a15f4ccdffb1bcd41096869fb385c",
+      "name": "teleport-17.7.3",
       "pname": "teleport",
-      "rev": "6607cf789e541e7873d40d3a8f7815ea92204f32",
-      "rev_count": 767267,
-      "rev_date": "2025-03-13T07:39:42Z",
-      "scrape_date": "2025-03-14T00:31:05Z",
+      "rev": "01f116e4df6a15f4ccdffb1bcd41096869fb385c",
+      "rev_count": 882227,
+      "rev_date": "2025-10-22T06:30:52Z",
+      "scrape_date": "2025-10-24T02:23:40.759029Z",
       "stabilities": [
+        "stable",
         "staging",
         "unstable"
       ],
       "unfree": false,
-      "version": "16.4.16",
+      "version": "17.7.3",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "client": "/nix/store/0kxn3h1kabvz4qyp7wb9zmybnqy9w69s-teleport-16.4.16-client",
-        "out": "/nix/store/abkm82znsn4k4227kggd2vp6ifyj0mn5-teleport-16.4.16"
+        "client": "/nix/store/83hdpkxb89vsmlggs965ihp2470bjxi4-teleport-17.7.3-client",
+        "out": "/nix/store/jbyh7wfwd5hqfs8rzzfqp8jcn203mn9r-teleport-17.7.3"
       },
       "system": "x86_64-darwin",
-      "group": "toplevel",
+      "group": "teleport",
       "priority": 5
     },
     {
       "attr_path": "teleport",
       "broken": false,
-      "derivation": "/nix/store/vz7f066gg3sj8vbp1w8wh5wh8krhfxm2-teleport-16.4.16.drv",
+      "derivation": "/nix/store/xh5j73nca0msgk0q9q3c4wxkd7zfqvnd-teleport-17.7.3.drv",
       "description": "Certificate authority and access plane for SSH, Kubernetes, web applications, and databases",
       "install_id": "teleport",
       "license": "AGPL-3.0-or-later",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=6607cf789e541e7873d40d3a8f7815ea92204f32",
-      "name": "teleport-16.4.16",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=01f116e4df6a15f4ccdffb1bcd41096869fb385c",
+      "name": "teleport-17.7.3",
       "pname": "teleport",
-      "rev": "6607cf789e541e7873d40d3a8f7815ea92204f32",
-      "rev_count": 767267,
-      "rev_date": "2025-03-13T07:39:42Z",
-      "scrape_date": "2025-03-14T00:31:05Z",
+      "rev": "01f116e4df6a15f4ccdffb1bcd41096869fb385c",
+      "rev_count": 882227,
+      "rev_date": "2025-10-22T06:30:52Z",
+      "scrape_date": "2025-10-24T03:01:13.381952Z",
       "stabilities": [
+        "stable",
         "staging",
         "unstable"
       ],
       "unfree": false,
-      "version": "16.4.16",
+      "version": "17.7.3",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "client": "/nix/store/1a2g6rxmwzhc7kgyyckpwahmky71126a-teleport-16.4.16-client",
-        "out": "/nix/store/233apf1r0fk6c967ny3pcj1ahzrvz9xj-teleport-16.4.16"
+        "client": "/nix/store/lwrpq8lvdlks72hakbq98489ax1v425m-teleport-17.7.3-client",
+        "out": "/nix/store/jlw7fyals9fhi3r268kzvcfy08jp5h81-teleport-17.7.3"
       },
       "system": "x86_64-linux",
-      "group": "toplevel",
+      "group": "teleport",
       "priority": 5
     }
   ]
