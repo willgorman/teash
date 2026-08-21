@@ -8,6 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evertras/bubble-table/table"
+	"github.com/sahilm/fuzzy"
 
 	"github.com/willgorman/teash/internal/app"
 )
@@ -395,24 +396,28 @@ func (m Model) View() string {
 	return s
 }
 
+// filterServersByText fuzzy-matches a whitespace-separated query against all
+// columns (hostname, IP, OS, labels). Each word in the query must fuzzy-match
+// at least one column (AND across words, OR across columns), so e.g. "rocky dev"
+// matches a server with OS "Rocky Linux 9" and label "environment: dev".
 func (m Model) filterServersByText(query string) []app.ServerView {
-	query = strings.ToLower(query)
+	words := strings.Fields(query)
 	var result []app.ServerView
 	for _, sv := range m.servers {
-		if strings.Contains(strings.ToLower(sv.Hostname), query) ||
-			strings.Contains(strings.ToLower(sv.Addr), query) ||
-			strings.Contains(strings.ToLower(sv.OS), query) {
-			result = append(result, sv)
-			continue
-		}
-		found := false
+		fields := make([]string, 0, 3+len(sv.AllLabels))
+		fields = append(fields, sv.Hostname, sv.Addr, sv.OS)
 		for _, v := range sv.AllLabels {
-			if strings.Contains(strings.ToLower(v), query) {
-				found = true
+			fields = append(fields, v)
+		}
+
+		matchesAllWords := true
+		for _, word := range words {
+			if len(fuzzy.Find(word, fields)) == 0 {
+				matchesAllWords = false
 				break
 			}
 		}
-		if found {
+		if matchesAllWords {
 			result = append(result, sv)
 		}
 	}

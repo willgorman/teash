@@ -9,6 +9,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/exp/teatest v0.0.0-20260223200540-d6a276319c45
 	github.com/evertras/bubble-table v0.19.2
+	github.com/sahilm/fuzzy v0.1.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
